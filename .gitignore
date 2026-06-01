@@ -1,0 +1,66 @@
+# ───────────────────────────────────────────────
+#  Rappel Santé — fichiers à NE PAS versionner
+# ───────────────────────────────────────────────
+
+# Dépendances (réinstallées avec `npm install`)
+node_modules/
+.pnp
+.pnp.js
+
+# Builds / sorties de production
+dist/
+dist-ssr/
+build/
+*.local
+
+# Cache des outils
+.vite/
+.cache/
+.eslintcache
+.turbo/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Variables d'environnement (secrets : clés API, etc.)
+.env
+.env.local
+.env.*.local
+
+# ─── Capacitor / Android (Étape 4 — APK) ───
+# Le dossier natif est généré par `npx cap add android`.
+android/
+ios/
+.gradle/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# ─── Éditeurs / IDE ───
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ─── Système d'exploitation ───
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+# macOS (pour les coéquipiers sur Mac)
+.DS_Store
+.AppleDouble
+# Linux
+*~
+
+# ─── Outils Claude Code (config locale, non partagée) ───
+.claude/settings.local.json
