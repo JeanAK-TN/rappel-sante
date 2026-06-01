@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Eye, EyeOff, Phone, Lock, User, Search } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock, User, Search, ChevronLeft } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 
@@ -401,7 +401,12 @@ export function LoginScreen() {
   return (
     <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
       <StatusBar />
-      <div style={{ padding: "16px 24px 0" }}>
+      <div style={{ padding: "8px 16px 0" }}>
+        <button onClick={() => navigate("/")} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "6px 4px", color: "#607D8B", fontSize: 14, fontWeight: 500 }}>
+          <ChevronLeft size={20} color="#607D8B" /> Accueil
+        </button>
+      </div>
+      <div style={{ padding: "8px 24px 0" }}>
         <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Se connecter</div>
         <div style={{ fontSize: 14, color: "#607D8B", marginTop: 4 }}>Choisissez votre compte.</div>
       </div>
