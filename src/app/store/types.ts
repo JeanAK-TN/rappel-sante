@@ -42,6 +42,7 @@ export interface Profile {
   sex: string;
   pathologies: string[];
   doctor?: string;
+  doctorPhone?: string;
   dataSharing: boolean;
   offlineMode: boolean;
   language: string;

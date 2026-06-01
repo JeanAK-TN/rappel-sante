@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Check, Clock, X, Pencil, Trash2 } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
 import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
 import { dayCompletion } from "../../store/health";
+import { syncMedicationReminders } from "../../notifications";
 import type { Medication } from "../../store/types";
 
 const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -21,6 +22,12 @@ export function MedicationsScreen() {
   const [addOpen, setAddOpen] = useState(false);
   const [editMed, setEditMed] = useState<Medication | null>(null);
   const [detail, setDetail] = useState<Medication | null>(null);
+
+  // Replanifie les rappels quand les médicaments ou la préférence changent (natif uniquement).
+  const remindersEnabled = store.state.profile.notifications.rappels;
+  useEffect(() => {
+    syncMedicationReminders(medications, remindersEnabled);
+  }, [medications, remindersEnabled]);
 
   function toggleWithToast(medId: string, time: string) {
     const wasTaken = store.isTaken(medId, time);
@@ -216,7 +223,7 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
   const [name, setName] = useState(initial?.name ?? "");
   const [dose, setDose] = useState(initial?.dose ?? "1 comprimé");
   const [category, setCategory] = useState(initial?.category ?? "");
-  const [time, setTime] = useState(initial?.times[0] ?? "08:00");
+  const [times, setTimes] = useState<string[]>(initial?.times?.length ? [...initial.times] : ["08:00"]);
   const [color, setColor] = useState(initial?.color ?? COLORS[0]);
 
   const canSave = name.trim().length > 0;
@@ -225,7 +232,8 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
     if (!canSave) return;
     onSave({
       name: name.trim(), dose: dose.trim() || "1 comprimé",
-      category: category.trim() || "Médicament", color, times: [time],
+      category: category.trim() || "Médicament", color,
+      times: Array.from(new Set(times)).sort(),
       prescriber: initial?.prescriber, since: initial?.since, notice: initial?.notice,
     });
   }
@@ -247,14 +255,29 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
           <div style={labelStyle}>Nom du médicament</div>
           <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Ex. Amlodipine 5mg" autoFocus />
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={labelStyle}>Dose</div>
-            <input style={inputStyle} value={dose} onChange={e => setDose(e.target.value)} placeholder="1 comprimé" />
-          </div>
-          <div style={{ width: 120 }}>
-            <div style={labelStyle}>Horaire</div>
-            <input style={inputStyle} type="time" value={time} onChange={e => setTime(e.target.value)} />
+        <div>
+          <div style={labelStyle}>Dose</div>
+          <input style={inputStyle} value={dose} onChange={e => setDose(e.target.value)} placeholder="1 comprimé" />
+        </div>
+        <div>
+          <div style={labelStyle}>Horaires de prise</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {times.map((t, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input style={{ ...inputStyle, flex: 1 }} type="time" value={t}
+                  onChange={e => setTimes(ts => ts.map((x, j) => (j === i ? e.target.value : x)))} />
+                {times.length > 1 && (
+                  <button onClick={() => setTimes(ts => ts.filter((_, j) => j !== i))} title="Retirer"
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 6 }}>
+                    <X size={18} color="#E53935" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button onClick={() => setTimes(ts => [...ts, "12:00"])}
+              style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#1E7D5C", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "4px 0" }}>
+              <Plus size={16} color="#1E7D5C" /> Ajouter un horaire
+            </button>
           </div>
         </div>
         <div>

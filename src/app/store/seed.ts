@@ -60,6 +60,7 @@ export function initialState(): AppState {
       sex: "Homme",
       pathologies: ["Hypertension", "Diabète type 2"],
       doctor: "Dr. Ayeva Koffi",
+      doctorPhone: "+228 90 11 22 33",
       dataSharing: true,
       offlineMode: false,
       language: "Français",

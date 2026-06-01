@@ -7,6 +7,8 @@ import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
 import { MEASURE_META, STATUS_COLOR, statusOf, isCritical, formatValue, relativeLabel, minAvgMax } from "../../store/health";
 import type { MeasureType, Measurement } from "../../store/types";
+import { Share } from "@capacitor/share";
+import { Capacitor } from "@capacitor/core";
 
 const TABS: { type: MeasureType; label: string }[] = [
   { type: "glycemie", label: "Glycémie" },
@@ -59,13 +61,53 @@ export function TrackingScreen() {
     toast.show("Mesure supprimée", "info");
   }
 
+  // Génère un récapitulatif et le partage (natif / navigateur / presse-papier).
+  async function exportSuivi() {
+    const p = store.state.profile;
+    const titre = `Mon suivi santé`;
+    const lignes = [
+      `Rappel Santé — Suivi de ${`${p.firstName} ${p.lastName}`.trim() || "patient"}`,
+      `Date : ${new Date().toLocaleDateString("fr-FR")}`,
+      "",
+      "Dernières mesures :",
+    ];
+    (["glycemie", "tension", "poids"] as MeasureType[]).forEach(t => {
+      const last = store.measurementsOf(t).at(-1);
+      lignes.push(`- ${MEASURE_META[t].label} : ${last ? `${formatValue(last)} ${MEASURE_META[t].unit}` : "—"}`);
+    });
+    if (store.state.medications.length) {
+      lignes.push("", "Traitement en cours :");
+      store.state.medications.forEach(m => lignes.push(`- ${m.name} (${m.dose}) à ${m.times.join(", ")}`));
+    }
+    const text = lignes.join("\n");
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await Share.share({ title: titre, text });
+      } else if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: titre, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast.show("Récapitulatif copié dans le presse-papier 📋", "info");
+        return;
+      }
+      toast.show("Récapitulatif prêt à partager ✅");
+    } catch {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast.show("Récapitulatif copié dans le presse-papier 📋", "info");
+      } catch {
+        toast.show("Partage indisponible", "info");
+      }
+    }
+  }
+
   return (
     <div style={{ width: 390, height: 844, background: "#F4F6F7", display: "flex", flexDirection: "column", position: "relative" }}>
       <div style={{ background: "#FFFFFF" }}>
         <StatusBar />
         <div style={{ padding: "8px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Mon Suivi</div>
-          <button onClick={() => toast.show("Export PDF bientôt disponible", "info")} title="Exporter" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
+          <button onClick={exportSuivi} title="Partager mon suivi" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
             <Download size={22} color="#607D8B" />
           </button>
         </div>
@@ -203,7 +245,7 @@ export function TrackingScreen() {
       <BottomNav active={2} />
 
       {entryOpen && <NewEntrySheet type={type} onClose={() => setEntryOpen(false)} onSaved={onSaved} />}
-      {critical && <CriticalAlert m={critical} onClose={() => setCritical(null)} />}
+      {critical && <CriticalAlert m={critical} doctorPhone={store.state.profile.doctorPhone} onClose={() => setCritical(null)} />}
     </div>
   );
 }
@@ -288,8 +330,9 @@ function NewEntrySheet({ type, onClose, onSaved }: { type: MeasureType; onClose:
   );
 }
 
-function CriticalAlert({ m, onClose }: { m: Measurement; onClose: () => void }) {
+function CriticalAlert({ m, doctorPhone, onClose }: { m: Measurement; doctorPhone?: string; onClose: () => void }) {
   const meta = MEASURE_META[m.type];
+  const tel = (doctorPhone ?? "").replace(/[^\d+]/g, "");
   return (
     <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 20 }}>
       <div style={{ background: "#FFFFFF", borderRadius: 20, overflow: "hidden", width: "100%" }}>
@@ -311,10 +354,14 @@ function CriticalAlert({ m, onClose }: { m: Measurement; onClose: () => void }) 
             <div style={{ fontSize: 12, color: "#607D8B", marginTop: 4 }}>Seuil critique : {meta.criticalHigh} {meta.unit}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <button style={{ width: "100%", height: 52, background: "#E53935", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
+            <a
+              href={tel.length >= 6 ? `tel:${tel}` : undefined}
+              onClick={(e) => { if (tel.length < 6) e.preventDefault(); }}
+              style={{ textDecoration: "none", width: "100%", height: 52, background: "#E53935", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: tel.length >= 6 ? 1 : 0.5 }}
+            >
               <Phone size={18} color="#FFFFFF" />
-              Contacter mon médecin
-            </button>
+              {tel.length >= 6 ? "Appeler mon médecin" : "Aucun numéro de médecin"}
+            </a>
             <button onClick={onClose} style={{ width: "100%", height: 52, background: "transparent", border: "2px solid #E53935", borderRadius: 12, color: "#E53935", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
               Compris
             </button>

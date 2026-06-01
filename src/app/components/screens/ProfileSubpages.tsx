@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ChevronLeft, Check } from "lucide-react";
+import { ChevronLeft, Check, Phone } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
@@ -104,16 +104,27 @@ export function DoctorScreen() {
   const toast = useToast();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(store.state.profile.doctor ?? "");
+  const [phone, setPhone] = useState(store.state.profile.doctorPhone ?? "");
 
   function save() {
-    store.updateProfile({ doctor: doctor.trim() || undefined });
+    store.updateProfile({ doctor: doctor.trim() || undefined, doctorPhone: phone.trim() || undefined });
     toast.show("Médecin enregistré ✅");
     navigate("/profile");
   }
 
+  const tel = phone.replace(/[^\d+]/g, "");
+
   return (
     <SubPage title="Mon médecin traitant" footer={<button style={primaryBtn} onClick={save}>Enregistrer</button>}>
       <div><div style={label}>Nom du médecin</div><input style={field} value={doctor} onChange={e => setDoctor(e.target.value)} placeholder="Dr. ..." /></div>
+      <div><div style={label}>Téléphone</div><input style={field} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+228 ..." inputMode="tel" /></div>
+      {tel.length >= 6 && (
+        <a href={`tel:${tel}`} style={{ textDecoration: "none" }}>
+          <div style={{ width: "100%", height: 52, background: "#43A047", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Phone size={18} color="#FFFFFF" /> Appeler le médecin
+          </div>
+        </a>
+      )}
       <div style={{ fontSize: 13, color: "#607D8B", lineHeight: 1.5 }}>
         Votre médecin pourra suivre vos données si vous activez le partage dans votre profil.
       </div>
