@@ -6,7 +6,7 @@ Application mobile de **gestion des maladies chroniques** au Togo : rappels de
 médicaments intelligents, suivi des indicateurs de santé (glycémie, tension,
 poids), coaching nutritionnel/sportif et alertes préventives.
 
-Projet Intégrateur : **Groupe 20, PI 2026**.
+Projet Innovation : **Groupe 20, PI 2026**.
 
 ---
 

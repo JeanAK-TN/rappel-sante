@@ -228,7 +228,7 @@ export function AboutScreen() {
         médicaments et leur suivi de santé au quotidien : rappels, mesures, coaching et alertes préventives.
       </div>
       <div style={{ background: "#FFFFFF", borderRadius: 12, padding: 16 }}>
-        <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>Projet Intégrateur — Groupe 20, PI 2026</div>
+        <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>Projet Innovation · Groupe 20, PI 2026</div>
         <div style={{ fontSize: 13, color: "#1A2E3B", lineHeight: 1.6 }}>
           M'BOUEKE Kevin · ZATO Alim · COMBEY Clétus · ADJAYI Rosalie · GNAKADE Cyrus · GAGOU David · KODIO Jean · AWANYA Gracia · AMEGNAGLO Scyana · LAYIBO Belinda
         </div>

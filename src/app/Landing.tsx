@@ -389,7 +389,7 @@ export default function Landing() {
       <section id="equipe" style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px" }}>
         <Reveal>
           <SectionLabel>L'équipe</SectionLabel>
-          <h2 style={h2}>Groupe 20 · Projet Intégrateur 2026</h2>
+          <h2 style={h2}>Groupe 20 · Projet Innovation 2026</h2>
           <p style={{ ...lead, maxWidth: 700 }}>Dix étudiants réunis autour d'un projet à fort impact social.</p>
         </Reveal>
         <Reveal style={{ marginTop: 36 }}>
@@ -436,7 +436,7 @@ export default function Landing() {
             <Logo size={30} ring="rgba(30,125,92,0.25)" />
             <span style={{ fontWeight: 700 }}>Rappel Santé</span>
           </div>
-          <div style={{ fontSize: 13, color: C.sub }}>© {new Date().getFullYear()} · Groupe 20 · Projet Intégrateur PI 2026 · Togo</div>
+          <div style={{ fontSize: 13, color: C.sub }}>© {new Date().getFullYear()} · Groupe 20 · Projet Innovation PI 2026 · Togo</div>
           <button onClick={() => navigate("/gallery")} style={navLink}>Voir tous les écrans →</button>
         </div>
       </footer>
