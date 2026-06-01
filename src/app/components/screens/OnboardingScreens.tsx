@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Eye, EyeOff, Phone, Lock, User, Search, CheckSquare, Square } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock, User, Search } from "lucide-react";
 import { StatusBar } from "../StatusBar";
+import { useStore } from "../../store/AppStore";
 
 // Splash Screen
 export function SplashScreen() {
@@ -109,6 +110,28 @@ export function OnboardingSlide3() {
 // Inscription
 export function InscriptionScreen() {
   const navigate = useNavigate();
+  const store = useStore();
+  const [firstName, setFirstName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+
+  const canSubmit = firstName.trim().length > 0 && accepted;
+
+  function submit() {
+    if (!canSubmit) return;
+    store.updateProfile({ firstName: firstName.trim(), lastName: "", phone: phone.trim() ? `+228 ${phone.trim()}` : "" });
+    navigate("/otp");
+  }
+
+  const fieldBox = (focused: boolean): React.CSSProperties => ({
+    height: 56, background: "#F4F6F7", borderRadius: 8,
+    border: `${focused ? 2 : 1.5}px solid ${focused ? "#1E7D5C" : "#B2CEBF"}`,
+    display: "flex", alignItems: "center", paddingInline: 16, gap: 12,
+  });
+  const inputStyle: React.CSSProperties = { flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B" };
+
   return (
     <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
       <StatusBar />
@@ -117,49 +140,46 @@ export function InscriptionScreen() {
         <div style={{ fontSize: 14, color: "#607D8B", marginTop: 4 }}>Entrez vos informations de base.</div>
       </div>
       <div style={{ padding: "32px 24px 0", display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Prénom */}
         <div>
           <div style={{ fontSize: 12, color: "#1E7D5C", fontWeight: 500, marginBottom: 4 }}>Prénom</div>
-          <div style={{ height: 56, background: "#F4F6F7", borderRadius: 8, border: "2px solid #1E7D5C", display: "flex", alignItems: "center", paddingInline: 16, gap: 12 }}>
+          <div style={fieldBox(firstName.length > 0)}>
             <User size={18} color="#1E7D5C" />
-            <span style={{ fontSize: 16, color: "#1A2E3B" }}>Kofi</span>
+            <input style={inputStyle} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Votre prénom" autoFocus />
           </div>
         </div>
-        {/* Téléphone */}
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 4 }}>Numéro de téléphone</div>
-          <div style={{ height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", display: "flex", alignItems: "center", paddingInline: 16, gap: 12 }}>
+          <div style={fieldBox(false)}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, paddingRight: 12, borderRight: "1px solid #B2CEBF" }}>
               <span style={{ fontSize: 18 }}>🇹🇬</span>
               <span style={{ fontSize: 14, color: "#1A2E3B", fontWeight: 500 }}>+228</span>
             </div>
             <Phone size={16} color="#607D8B" />
-            <span style={{ fontSize: 16, color: "#607D8B" }}>XX XX XX XX</span>
+            <input style={inputStyle} value={phone} onChange={e => setPhone(e.target.value)} placeholder="XX XX XX XX" inputMode="tel" />
           </div>
         </div>
-        {/* Mot de passe */}
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 4 }}>Mot de passe</div>
-          <div style={{ height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", display: "flex", alignItems: "center", paddingInline: 16, gap: 12, justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Lock size={18} color="#607D8B" />
-              <span style={{ fontSize: 16, color: "#1A2E3B" }}>••••••••</span>
-            </div>
-            <Eye size={18} color="#607D8B" />
+          <div style={fieldBox(false)}>
+            <Lock size={18} color="#607D8B" />
+            <input style={inputStyle} type={showPwd ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+            <button onClick={() => setShowPwd(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              {showPwd ? <EyeOff size={18} color="#607D8B" /> : <Eye size={18} color="#607D8B" />}
+            </button>
           </div>
         </div>
-        {/* Checkbox */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-          <div style={{ width: 20, height: 20, borderRadius: 4, background: "#1E7D5C", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <div onClick={() => setAccepted(v => !v)} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, cursor: "pointer" }}>
+          <div style={{ width: 20, height: 20, borderRadius: 4, background: accepted ? "#1E7D5C" : "#F4F6F7", border: accepted ? "none" : "1.5px solid #B2CEBF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {accepted && <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
           </div>
           <span style={{ fontSize: 14, color: "#607D8B" }}>J'accepte les <span style={{ color: "#1E7D5C" }}>conditions d'utilisation</span></span>
         </div>
       </div>
       <div style={{ position: "absolute", bottom: 48, left: 24, right: 24 }}>
         <button
-          onClick={() => navigate("/otp")}
-          style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
+          onClick={submit}
+          disabled={!canSubmit}
+          style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: canSubmit ? "pointer" : "not-allowed", opacity: canSubmit ? 1 : 0.4 }}
         >
           Créer mon compte
         </button>
@@ -213,9 +233,25 @@ export function OTPScreen() {
 }
 
 // Profil Médical Setup
+const PATHOLOGIES = ["Hypertension", "Diabète", "Insuff. cardiaque", "Asthme", "Autre"];
+
 export function ProfilMedicalScreen() {
   const navigate = useNavigate();
-  const pathologies = ["Hypertension", "Diabète", "Insuff. cardiaque", "Asthme", "Autre"];
+  const store = useStore();
+  const [age, setAge] = useState("");
+  const [sex, setSex] = useState("Homme");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [doctor, setDoctor] = useState("");
+
+  function togglePatho(p: string) {
+    setSelected(cur => cur.includes(p) ? cur.filter(x => x !== p) : [...cur, p]);
+  }
+
+  function finish(save: boolean) {
+    if (save) store.updateProfile({ age: age.trim() || "—", sex, pathologies: selected, doctor: doctor.trim() || undefined });
+    navigate("/home");
+  }
+
   return (
     <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
       <StatusBar />
@@ -223,59 +259,61 @@ export function ProfilMedicalScreen() {
         <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Votre profil de santé</div>
         <div style={{ fontSize: 14, color: "#607D8B", marginTop: 4 }}>Ces informations personnalisent vos rappels.</div>
       </div>
-      <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
-        {/* Âge */}
+      <div style={{ padding: "24px 24px 140px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto", flex: 1 }}>
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>Âge</div>
-          <div style={{ height: 56, background: "#F4F6F7", borderRadius: 8, border: "2px solid #1E7D5C", display: "flex", alignItems: "center", paddingInline: 16 }}>
-            <span style={{ fontSize: 16, color: "#1A2E3B", fontWeight: 500 }}>42 ans</span>
+          <div style={{ height: 56, background: "#F4F6F7", borderRadius: 8, border: `${age ? 2 : 1.5}px solid ${age ? "#1E7D5C" : "#B2CEBF"}`, display: "flex", alignItems: "center", paddingInline: 16 }}>
+            <input style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B", fontWeight: 500 }} value={age} onChange={e => setAge(e.target.value.replace(/\D/g, ""))} placeholder="Votre âge" inputMode="numeric" autoFocus />
           </div>
         </div>
-        {/* Sexe */}
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>Sexe</div>
           <div style={{ display: "flex", gap: 12 }}>
-            {["Homme", "Femme"].map((s, i) => (
-              <div key={s} style={{
-                flex: 1, height: 44, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center",
-                background: i === 0 ? "#1E7D5C" : "#F4F6F7",
-                border: i === 0 ? "none" : "1.5px solid #B2CEBF",
-                color: i === 0 ? "#FFFFFF" : "#607D8B", fontWeight: 500, fontSize: 14,
-              }}>{s}</div>
-            ))}
+            {["Homme", "Femme"].map(s => {
+              const on = s === sex;
+              return (
+                <button key={s} onClick={() => setSex(s)} style={{
+                  flex: 1, height: 44, borderRadius: 20, cursor: "pointer",
+                  background: on ? "#1E7D5C" : "#F4F6F7",
+                  border: on ? "none" : "1.5px solid #B2CEBF",
+                  color: on ? "#FFFFFF" : "#607D8B", fontWeight: 500, fontSize: 14,
+                }}>{s}</button>
+              );
+            })}
           </div>
         </div>
-        {/* Pathologies */}
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>Mes pathologies</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {pathologies.map((p, i) => (
-              <div key={p} style={{
-                paddingInline: 16, height: 36, borderRadius: 20, display: "flex", alignItems: "center",
-                background: i < 2 ? "#1E7D5C" : "#D6EFE6",
-                color: i < 2 ? "#FFFFFF" : "#1E7D5C", fontWeight: 500, fontSize: 13,
-              }}>{p}</div>
-            ))}
+            {PATHOLOGIES.map(p => {
+              const on = selected.includes(p);
+              return (
+                <button key={p} onClick={() => togglePatho(p)} style={{
+                  paddingInline: 16, height: 36, borderRadius: 20, cursor: "pointer", border: "none",
+                  background: on ? "#1E7D5C" : "#D6EFE6",
+                  color: on ? "#FFFFFF" : "#1E7D5C", fontWeight: 500, fontSize: 13,
+                }}>{p}</button>
+              );
+            })}
           </div>
         </div>
-        {/* Médecin */}
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>Médecin traitant (optionnel)</div>
           <div style={{ height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", display: "flex", alignItems: "center", paddingInline: 16, gap: 12 }}>
             <Search size={18} color="#607D8B" />
-            <span style={{ fontSize: 16, color: "#B2CEBF" }}>Rechercher un médecin...</span>
+            <input style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B" }} value={doctor} onChange={e => setDoctor(e.target.value)} placeholder="Rechercher un médecin..." />
           </div>
         </div>
       </div>
-      <div style={{ position: "absolute", bottom: 40, left: 24, right: 24 }}>
+      <div style={{ position: "absolute", bottom: 40, left: 24, right: 24, background: "#FFFFFF" }}>
         <button
-          onClick={() => navigate("/home")}
+          onClick={() => finish(true)}
           style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
         >
           Continuer
         </button>
         <div
-          onClick={() => navigate("/home")}
+          onClick={() => finish(false)}
           style={{ textAlign: "center", marginTop: 14, fontSize: 14, color: "#607D8B", cursor: "pointer" }}
         >Passer pour l'instant</div>
       </div>

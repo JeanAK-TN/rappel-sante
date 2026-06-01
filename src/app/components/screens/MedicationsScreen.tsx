@@ -3,7 +3,7 @@ import { Plus, Check, Clock, X } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
 import { useStore } from "../../store/AppStore";
-import { dateKey } from "../../store/health";
+import { dayCompletion } from "../../store/health";
 import type { Medication } from "../../store/types";
 
 const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -43,10 +43,15 @@ export function MedicationsScreen() {
   }
 
   // Pastilles de la semaine : vert si toutes prises, orange si partiel, gris sinon.
-  const todayKey = dateKey();
-  const todayCount = (store.state.intakeLog[todayKey] ?? []).length;
   const todayDow = (new Date().getDay() + 6) % 7; // 0 = lundi
-  const baseDate = new Date().getDate();
+  const monday = new Date();
+  monday.setDate(monday.getDate() - todayDow);
+  const weekDays = days.map((_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+  const dotColor: Record<string, string> = { full: "#43A047", partial: "#FF9800", none: "#D1D5DB" };
 
   return (
     <div style={{ width: 390, height: 844, background: "#F4F6F7", display: "flex", flexDirection: "column", position: "relative" }}>
@@ -125,15 +130,15 @@ export function MedicationsScreen() {
             <div style={{ display: "flex", justifyContent: "space-around" }}>
               {days.map((day, i) => {
                 const isToday = i === todayDow;
-                let dot = "#D1D5DB";
-                if (isToday) dot = todayCount >= total && total > 0 ? "#43A047" : todayCount > 0 ? "#FF9800" : "#D1D5DB";
-                const dayNum = baseDate - (todayDow - i);
+                const d = weekDays[i];
+                const isFuture = d.getTime() > Date.now() && !isToday;
+                const dot = isFuture ? "#D1D5DB" : dotColor[dayCompletion(store.state.intakeLog, d, total)];
                 return (
                   <div key={day} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 11, color: "#607D8B" }}>{day}</span>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: dot }} />
                     <span style={{ fontSize: 12, fontWeight: isToday ? 700 : 400, color: isToday ? "#1E7D5C" : "#1A2E3B" }}>
-                      {dayNum > 0 ? dayNum : ""}
+                      {d.getDate()}
                     </span>
                   </div>
                 );

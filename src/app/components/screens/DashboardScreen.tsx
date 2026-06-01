@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
 import { useStore } from "../../store/AppStore";
-import { statusOf, formatValue, MEASURE_META } from "../../store/health";
+import { statusOf, formatValue, MEASURE_META, computeStreak } from "../../store/health";
 import type { MeasureType } from "../../store/types";
 
 function toMin(hhmm: string): number {
@@ -71,6 +71,8 @@ export function DashboardScreen() {
   const glycemie = last("glycemie");
   const poids = last("poids");
 
+  const streak = computeStreak(store.state.intakeLog);
+
   return (
     <div style={{ width: 390, height: 844, background: "#F4F6F7", display: "flex", flexDirection: "column", position: "relative" }}>
       <div style={{ background: "#FFFFFF" }}>
@@ -119,10 +121,12 @@ export function DashboardScreen() {
         </div>
 
         {/* Streak */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#D6EFE6", borderRadius: 20, paddingInline: 16, height: 36, alignSelf: "flex-start" }}>
-          <span style={{ fontSize: 16 }}>🔥</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#1E7D5C" }}>7 jours consécutifs</span>
-        </div>
+        {streak > 0 && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#D6EFE6", borderRadius: 20, paddingInline: 16, height: 36, alignSelf: "flex-start" }}>
+            <span style={{ fontSize: 16 }}>🔥</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#1E7D5C" }}>{streak} jour{streak > 1 ? "s" : ""} consécutif{streak > 1 ? "s" : ""}</span>
+          </div>
+        )}
 
         {/* Accès rapide */}
         <div>

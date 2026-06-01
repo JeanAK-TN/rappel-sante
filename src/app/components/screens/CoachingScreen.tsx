@@ -1,8 +1,51 @@
 import { Play, AlertTriangle, CheckCircle } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
+import { useStore } from "../../store/AppStore";
+import { statusOf, formatValue } from "../../store/health";
+
+interface Advice { kind: "alert" | "ok"; text: string; }
 
 export function CoachingScreen() {
+  const store = useStore();
+  const { profile } = store.state;
+  const hasDiabete = profile.pathologies.some(p => p.toLowerCase().includes("diab"));
+  const hasHypertension = profile.pathologies.some(p => p.toLowerCase().includes("hyper") || p.toLowerCase().includes("tension"));
+
+  const glyc = store.measurementsOf("glycemie").at(-1);
+  const tens = store.measurementsOf("tension").at(-1);
+
+  // Alertes de prévention dérivées des dernières mesures.
+  const advices: Advice[] = [];
+  if (glyc) {
+    const s = statusOf("glycemie", glyc.value);
+    if (s === "critical") advices.push({ kind: "alert", text: `Votre glycémie (${formatValue(glyc)} g/L) est élevée. Évitez les sucres rapides et contactez votre médecin si cela persiste.` });
+    else if (s === "warning") advices.push({ kind: "alert", text: `Votre glycémie (${formatValue(glyc)} g/L) est légèrement élevée. Privilégiez les aliments à index glycémique bas au prochain repas.` });
+    else advices.push({ kind: "ok", text: `Votre glycémie (${formatValue(glyc)} g/L) est dans la cible. Continuez ainsi !` });
+  }
+  if (tens) {
+    const s = statusOf("tension", tens.value);
+    if (s !== "normal") advices.push({ kind: "alert", text: `Votre tension (${formatValue(tens)} mmHg) est au-dessus de la normale. Réduisez le sel et reposez-vous.` });
+    else advices.push({ kind: "ok", text: `Votre tension (${formatValue(tens)} mmHg) est stable. Continuez vos bonnes habitudes !` });
+  }
+  if (advices.length === 0) advices.push({ kind: "ok", text: "Saisissez vos mesures pour recevoir des conseils personnalisés." });
+
+  // Recettes et conseils adaptés aux pathologies.
+  const recipes = hasDiabete
+    ? [
+        { name: "Bouillie de mil", tag: "Diabète adapté", cal: "280 kcal", color: "#E8F5E9" },
+        { name: "Sauté de légumes", tag: "Index glycémique bas", cal: "190 kcal", color: "#E3F2FD" },
+      ]
+    : [
+        { name: "Poisson grillé", tag: "Pauvre en sel", cal: "240 kcal", color: "#E8F5E9" },
+        { name: "Légumes vapeur", tag: "Riche en potassium", cal: "150 kcal", color: "#E3F2FD" },
+      ];
+
+  const tips: { title: string; body: string; tag: string }[] = [];
+  if (hasDiabete) tips.push({ title: "Limitez le riz blanc", body: "Remplacez par du riz brun ou du mil pour réduire l'index glycémique.", tag: "Diabète" });
+  if (hasHypertension) tips.push({ title: "Réduisez le sel", body: "Limitez le sel ajouté et les bouillons industriels pour protéger votre tension.", tag: "Hypertension" });
+  tips.push({ title: "Hydratation", body: "Buvez au moins 1,5 L d'eau par jour. Évitez les sodas et jus sucrés.", tag: "Prévention" });
+
   return (
     <div style={{ width: 390, height: 844, background: "#F4F6F7", display: "flex", flexDirection: "column", position: "relative" }}>
       <div style={{ background: "#FFFFFF" }}>
@@ -10,7 +53,6 @@ export function CoachingScreen() {
         <div style={{ padding: "8px 20px 0" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Mon Coaching</div>
         </div>
-        {/* Tabs */}
         <div style={{ display: "flex", paddingInline: 20, marginTop: 16, borderBottom: "1px solid #F4F6F7" }}>
           {["Nutrition", "Sport", "Prévention"].map((tab, i) => (
             <div key={tab} style={{
@@ -24,15 +66,10 @@ export function CoachingScreen() {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 90px", display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Plan du jour */}
         <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>VOTRE PLAN DU JOUR</div>
 
-        {/* Recipe cards */}
         <div style={{ display: "flex", gap: 12 }}>
-          {[
-            { name: "Bouillie de mil", tag: "Diabète adapté", cal: "280 kcal", color: "#E8F5E9" },
-            { name: "Sauté de légumes", tag: "Faible index glycémique", cal: "190 kcal", color: "#E3F2FD" },
-          ].map((recipe, i) => (
+          {recipes.map((recipe, i) => (
             <div key={i} style={{ flex: 1, background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0px 2px 12px rgba(0,0,0,0.08)" }}>
               <div style={{ height: 90, background: recipe.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M12 2C8 2 4 6 4 11c0 4 2.5 7.5 6 9v2h4v-2c3.5-1.5 6-5 6-9 0-5-4-9-8-9z" fill="#1E7D5C" opacity="0.3" stroke="#1E7D5C" strokeWidth="1.5" /></svg>
@@ -48,12 +85,8 @@ export function CoachingScreen() {
           ))}
         </div>
 
-        {/* Conseils */}
         <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>CONSEILS ALIMENTAIRES</div>
-        {[
-          { title: "Limitez le riz blanc", body: "Remplacez par du riz brun ou du mil pour réduire l'index glycémique.", tag: "Nutrition" },
-          { title: "Hydratation", body: "Buvez au moins 1.5L d'eau par jour. Évitez les sodas et jus sucrés.", tag: "Prévention" },
-        ].map((tip, i) => (
+        {tips.map((tip, i) => (
           <div key={i} style={{ background: "#D6EFE6", borderRadius: 16, padding: 16, borderLeft: "4px solid #1E7D5C", display: "flex", gap: 12 }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -67,7 +100,6 @@ export function CoachingScreen() {
           </div>
         ))}
 
-        {/* Programme sport */}
         <div style={{ background: "#FFFFFF", borderRadius: 16, padding: 16, boxShadow: "0px 2px 12px rgba(0,0,0,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div>
@@ -78,22 +110,21 @@ export function CoachingScreen() {
               <span style={{ fontSize: 12, color: "#1E7D5C", fontWeight: 600 }}>Légère</span>
             </div>
           </div>
-          <button style={{ width: "100%", height: 44, background: "#1E7D5C", border: "none", borderRadius: 10, color: "#FFFFFF", fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <button style={{ width: "100%", height: 44, background: "#1E7D5C", border: "none", borderRadius: 10, color: "#FFFFFF", fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
             <Play size={16} color="#FFFFFF" />
             Commencer la séance
           </button>
         </div>
 
-        {/* Alertes prévention */}
         <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>ALERTES & CONSEILS</div>
-        <div style={{ background: "#FFF3E0", borderRadius: 16, padding: 16, display: "flex", gap: 12 }}>
-          <AlertTriangle size={20} color="#FF9800" style={{ flexShrink: 0 }} />
-          <div style={{ fontSize: 13, color: "#1A2E3B", lineHeight: 1.5 }}>Votre glycémie est légèrement élevée ce matin. Évitez les sucres rapides au déjeuner.</div>
-        </div>
-        <div style={{ background: "#E8F5E9", borderRadius: 16, padding: 16, display: "flex", gap: 12 }}>
-          <CheckCircle size={20} color="#43A047" style={{ flexShrink: 0 }} />
-          <div style={{ fontSize: 13, color: "#1A2E3B", lineHeight: 1.5 }}>Votre tension est stable depuis 5 jours. Continuez ainsi !</div>
-        </div>
+        {advices.map((a, i) => (
+          <div key={i} style={{ background: a.kind === "alert" ? "#FFF3E0" : "#E8F5E9", borderRadius: 16, padding: 16, display: "flex", gap: 12 }}>
+            {a.kind === "alert"
+              ? <AlertTriangle size={20} color="#FF9800" style={{ flexShrink: 0 }} />
+              : <CheckCircle size={20} color="#43A047" style={{ flexShrink: 0 }} />}
+            <div style={{ fontSize: 13, color: "#1A2E3B", lineHeight: 1.5 }}>{a.text}</div>
+          </div>
+        ))}
       </div>
 
       <BottomNav active={3} />

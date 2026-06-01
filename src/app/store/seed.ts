@@ -36,6 +36,18 @@ const poids: Measurement[] = [
   { id: id(), type: "poids", value: 74.5, at: at(0, 7, 0) },
 ];
 
+// Tous les médicaments pris, pour un jour donné.
+const ALL_TAGS = ["med-amlodipine@08:00", "med-metformine@12:00", "med-losartan@20:00"];
+
+function buildIntakeHistory(): Record<string, string[]> {
+  const log: Record<string, string[]> = {};
+  for (let d = 6; d >= 1; d--) {
+    log[dateKey(new Date(Date.now() - d * DAY))] = [...ALL_TAGS];
+  }
+  log[dateKey()] = ["med-amlodipine@08:00"]; // aujourd'hui : partiel
+  return log;
+}
+
 export function initialState(): AppState {
   return {
     profile: {
@@ -66,10 +78,9 @@ export function initialState(): AppState {
         notice: "Le losartan est un antagoniste des récepteurs de l'angiotensine II, utilisé contre l'hypertension.",
       },
     ],
-    // Première prise du jour déjà cochée (progression 1/3 comme la maquette).
-    intakeLog: {
-      [dateKey()]: ["med-amlodipine@08:00"],
-    },
+    // Historique des prises : 6 jours complets derrière + aujourd'hui partiel (1/3).
+    // Donne un streak de 7 jours consécutifs.
+    intakeLog: buildIntakeHistory(),
     measurements: [...glyc, ...tension, ...poids],
   };
 }

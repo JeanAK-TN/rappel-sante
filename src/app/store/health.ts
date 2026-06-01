@@ -1,5 +1,5 @@
 // Seuils médicaux, statuts colorés et utilitaires de présentation.
-import type { MeasureType, Measurement } from "./types";
+import type { MeasureType, Measurement, IntakeLog } from "./types";
 
 export type HealthStatus = "normal" | "warning" | "critical";
 
@@ -58,6 +58,29 @@ export function relativeLabel(at: number): string {
   if (dateKey(d) === yesterday) return `Hier, ${heure}`;
   const court = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
   return `${court}, ${heure}`;
+}
+
+/** Nombre de jours consécutifs (jusqu'à aujourd'hui) avec au moins une prise. */
+export function computeStreak(log: IntakeLog): number {
+  let streak = 0;
+  const cursor = new Date();
+  // Si aujourd'hui n'a aucune prise, on compte à partir d'hier.
+  if (!(log[dateKey(cursor)]?.length)) cursor.setDate(cursor.getDate() - 1);
+  while ((log[dateKey(cursor)]?.length ?? 0) > 0) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+export type DayCompletion = "full" | "partial" | "none";
+
+/** Complétude des prises pour une date donnée. */
+export function dayCompletion(log: IntakeLog, day: Date, totalPerDay: number): DayCompletion {
+  const count = log[dateKey(day)]?.length ?? 0;
+  if (totalPerDay > 0 && count >= totalPerDay) return "full";
+  if (count > 0) return "partial";
+  return "none";
 }
 
 /** Min / moyenne / max d'une série de valeurs. */
