@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ChevronLeft, ChevronRight, AlertTriangle, Users, Bell, MessageSquare, Settings, Plus, Trash2, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, AlertTriangle, Users, Bell, MessageSquare, Settings, Plus, Trash2, Phone, Search } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
@@ -31,10 +31,13 @@ function worstStatus(store: ReturnType<typeof useStore>, userId: string): Health
 export function MedecinDashboard() {
   const navigate = useNavigate();
   const store = useStore();
+  const [query, setQuery] = useState("");
   const patients = store.usersList();
 
   const withStatus = patients.map(p => ({ ...p, status: worstStatus(store, p.id) }));
   const alertes = withStatus.filter(p => p.status === "critical");
+  const q = query.trim().toLowerCase();
+  const filtered = q ? withStatus.filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(q)) : withStatus;
 
   // Adhérence moyenne du jour (patients ayant un traitement).
   const adh = patients
@@ -85,12 +88,28 @@ export function MedecinDashboard() {
 
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>MES PATIENTS</div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#FFFFFF", borderRadius: 12, padding: "10px 14px", marginBottom: 12, boxShadow: "0px 2px 8px rgba(0,0,0,0.06)" }}>
+            <Search size={18} color="#607D8B" />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Rechercher un patient..."
+              style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 14, color: "#1A2E3B" }}
+            />
+          </div>
+
           {withStatus.length === 0 && (
             <div style={{ background: "#FFFFFF", borderRadius: 16, padding: 24, textAlign: "center", color: "#607D8B", fontSize: 14 }}>
               Aucun patient enregistré pour l'instant.
             </div>
           )}
-          {withStatus.map(p => {
+          {withStatus.length > 0 && filtered.length === 0 && (
+            <div style={{ background: "#FFFFFF", borderRadius: 16, padding: 24, textAlign: "center", color: "#607D8B", fontSize: 14 }}>
+              Aucun patient ne correspond à « {query} ».
+            </div>
+          )}
+          {filtered.map(p => {
             const user = store.getUser(p.id);
             const patho = user?.profile.pathologies.join(" · ") || "—";
             const nbMeds = user?.medications.length ?? 0;
