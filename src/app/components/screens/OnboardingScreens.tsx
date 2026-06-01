@@ -35,11 +35,6 @@ export function SplashScreen() {
           <div style={{ fontSize: 16, color: "rgba(255,255,255,0.8)", marginTop: 6 }}>Votre santé, simplifiée.</div>
         </div>
       </div>
-      <div style={{ position: "absolute", bottom: 60, display: "flex", gap: 8 }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{ width: i === 0 ? 24 : 8, height: 8, borderRadius: 4, background: i === 0 ? "#FFFFFF" : "rgba(255,255,255,0.4)" }} />
-        ))}
-      </div>
     </div>
   );
 }
