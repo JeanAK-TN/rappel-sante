@@ -103,11 +103,21 @@ export function DoctorScreen() {
   const store = useStore();
   const toast = useToast();
   const navigate = useNavigate();
-  const [doctor, setDoctor] = useState(store.state.profile.doctor ?? "");
-  const [phone, setPhone] = useState(store.state.profile.doctorPhone ?? "");
+  const p0 = store.state.profile;
+  const [firstName, setFirstName] = useState(p0.doctorFirstName ?? "");
+  const [lastName, setLastName] = useState(p0.doctorLastName ?? "");
+  const [profession, setProfession] = useState(p0.doctorProfession ?? "");
+  const [phone, setPhone] = useState(p0.doctorPhone ?? "");
 
   function save() {
-    store.updateProfile({ doctor: doctor.trim() || undefined, doctorPhone: phone.trim() || undefined });
+    const docName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+    store.updateProfile({
+      doctorFirstName: firstName.trim() || undefined,
+      doctorLastName: lastName.trim() || undefined,
+      doctorProfession: profession.trim() || undefined,
+      doctor: docName ? `Dr. ${docName}` : undefined,
+      doctorPhone: phone.trim() || undefined,
+    });
     toast.show("Médecin enregistré ✅");
     navigate("/profile");
   }
@@ -116,7 +126,11 @@ export function DoctorScreen() {
 
   return (
     <SubPage title="Mon médecin traitant" footer={<button style={primaryBtn} onClick={save}>Enregistrer</button>}>
-      <div><div style={label}>Nom du médecin</div><input style={field} value={doctor} onChange={e => setDoctor(e.target.value)} placeholder="Dr. ..." /></div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ flex: 1 }}><div style={label}>Prénom</div><input style={field} value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Prénom" /></div>
+        <div style={{ flex: 1 }}><div style={label}>Nom</div><input style={field} value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Nom" /></div>
+      </div>
+      <div><div style={label}>Profession</div><input style={field} value={profession} onChange={e => setProfession(e.target.value)} placeholder="Ex. Cardiologue" /></div>
       <div><div style={label}>Téléphone</div><input style={field} value={phone} onChange={e => setPhone(e.target.value)} placeholder="+228 ..." inputMode="tel" /></div>
       {tel.length >= 6 && (
         <a href={`tel:${tel}`} style={{ textDecoration: "none" }}>

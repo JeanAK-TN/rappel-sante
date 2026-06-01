@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Eye, EyeOff, Phone, Lock, User, Search, ChevronLeft, Stethoscope } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock, User, ChevronLeft, Stethoscope } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 
@@ -264,7 +264,10 @@ export function ProfilMedicalScreen() {
   const [age, setAge] = useState("");
   const [sex, setSex] = useState("Homme");
   const [selected, setSelected] = useState<string[]>([]);
-  const [doctor, setDoctor] = useState("");
+  const [diseaseDetail, setDiseaseDetail] = useState("");
+  const [docFirst, setDocFirst] = useState("");
+  const [docLast, setDocLast] = useState("");
+  const [docProfession, setDocProfession] = useState("");
   const [glyc, setGlyc] = useState("");
   const [sys, setSys] = useState("");
   const [dia, setDia] = useState("");
@@ -274,23 +277,32 @@ export function ProfilMedicalScreen() {
     setSelected(cur => cur.includes(p) ? cur.filter(x => x !== p) : [...cur, p]);
   }
 
-  function finish(save: boolean) {
-    if (save) {
-      store.updateProfile({ age: age.trim() || "—", sex, pathologies: selected, doctor: doctor.trim() || undefined });
-      // Mesures initiales : seules les valeurs renseignées sont enregistrées.
-      const now = Date.now();
-      const g = parseFloat(glyc.replace(",", "."));
-      if (!isNaN(g) && g > 0) store.addMeasurement({ type: "glycemie", value: g, context: "À jeun", at: now });
-      const s = parseInt(sys, 10), d = parseInt(dia, 10);
-      if (s > 0) store.addMeasurement({ type: "tension", value: s, diastolic: d > 0 ? d : undefined, context: "Matin", at: now });
-      const w = parseFloat(weight.replace(",", "."));
-      if (!isNaN(w) && w > 0) store.addMeasurement({ type: "poids", value: w, at: now });
-    }
+  function finish() {
+    const docName = [docFirst.trim(), docLast.trim()].filter(Boolean).join(" ");
+    store.updateProfile({
+      age: age.trim() || "—",
+      sex,
+      pathologies: selected,
+      diseaseDetail: diseaseDetail.trim() || undefined,
+      doctorFirstName: docFirst.trim() || undefined,
+      doctorLastName: docLast.trim() || undefined,
+      doctorProfession: docProfession.trim() || undefined,
+      doctor: docName ? `Dr. ${docName}` : undefined,
+    });
+    // Mesures initiales : seules les valeurs renseignées sont enregistrées.
+    const now = Date.now();
+    const g = parseFloat(glyc.replace(",", "."));
+    if (!isNaN(g) && g > 0) store.addMeasurement({ type: "glycemie", value: g, context: "À jeun", at: now });
+    const s = parseInt(sys, 10), d = parseInt(dia, 10);
+    if (s > 0) store.addMeasurement({ type: "tension", value: s, diastolic: d > 0 ? d : undefined, context: "Matin", at: now });
+    const w = parseFloat(weight.replace(",", "."));
+    if (!isNaN(w) && w > 0) store.addMeasurement({ type: "poids", value: w, at: now });
     navigate("/home");
   }
 
   const numInput: React.CSSProperties = { flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B" };
   const numBox: React.CSSProperties = { height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", display: "flex", alignItems: "center", paddingInline: 16, gap: 8 };
+  const docInput: React.CSSProperties = { height: 52, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", paddingInline: 14, fontSize: 15, color: "#1A2E3B", outline: "none", boxSizing: "border-box", width: "100%" };
 
   return (
     <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
@@ -336,12 +348,17 @@ export function ProfilMedicalScreen() {
               );
             })}
           </div>
+          <input style={{ ...docInput, marginTop: 12 }} value={diseaseDetail} onChange={e => setDiseaseDetail(e.target.value)} placeholder="Précisez la maladie (ex. Diabète de type 2)" />
         </div>
         <div>
-          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>Médecin traitant (optionnel)</div>
-          <div style={{ height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", display: "flex", alignItems: "center", paddingInline: 16, gap: 12 }}>
-            <Search size={18} color="#607D8B" />
-            <input style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B" }} value={doctor} onChange={e => setDoctor(e.target.value)} placeholder="Rechercher un médecin..." />
+          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>Votre médecin traitant</div>
+          <div style={{ fontSize: 12, color: "#B2CEBF", marginBottom: 8 }}>Idéalement renseigné avec votre médecin.</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 10 }}>
+              <input style={docInput} value={docFirst} onChange={e => setDocFirst(e.target.value)} placeholder="Prénom" />
+              <input style={docInput} value={docLast} onChange={e => setDocLast(e.target.value)} placeholder="Nom" />
+            </div>
+            <input style={docInput} value={docProfession} onChange={e => setDocProfession(e.target.value)} placeholder="Profession (ex. Cardiologue)" />
           </div>
         </div>
 
@@ -371,15 +388,11 @@ export function ProfilMedicalScreen() {
       </div>
       <div style={{ position: "absolute", bottom: 40, left: 24, right: 24, background: "#FFFFFF" }}>
         <button
-          onClick={() => finish(true)}
+          onClick={finish}
           style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
         >
           Continuer
         </button>
-        <div
-          onClick={() => finish(false)}
-          style={{ textAlign: "center", marginTop: 14, fontSize: 14, color: "#607D8B", cursor: "pointer" }}
-        >Passer pour l'instant</div>
       </div>
     </div>
   );

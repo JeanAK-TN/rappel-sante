@@ -188,6 +188,12 @@ export function MedecinPatient() {
             ))}
           </div>
         )}
+        {p.diseaseDetail && (
+          <div style={{ background: "#FFFFFF", borderRadius: 12, padding: "12px 14px", boxShadow: "0px 2px 8px rgba(0,0,0,0.06)" }}>
+            <span style={{ fontSize: 12, color: "#607D8B", fontWeight: 600 }}>Maladie : </span>
+            <span style={{ fontSize: 13, color: "#1A2E3B" }}>{p.diseaseDetail}</span>
+          </div>
+        )}
 
         {/* Indicateurs */}
         <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>Indicateurs récents</div>

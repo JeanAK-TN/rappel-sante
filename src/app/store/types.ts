@@ -47,7 +47,11 @@ export interface Profile {
   phone: string;
   sex: string;
   pathologies: string[];
-  doctor?: string;
+  diseaseDetail?: string;       // maladie chronique précise (texte libre)
+  doctor?: string;              // nom d'affichage composé, ex. "Dr. Ayeva Koffi"
+  doctorFirstName?: string;
+  doctorLastName?: string;
+  doctorProfession?: string;    // type de médecin, ex. "Cardiologue"
   doctorPhone?: string;
   dataSharing: boolean;
   offlineMode: boolean;
