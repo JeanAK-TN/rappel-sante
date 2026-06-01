@@ -121,7 +121,8 @@ export function InscriptionScreen() {
 
   function submit() {
     if (!canSubmit) return;
-    store.updateProfile({ firstName: firstName.trim(), lastName: "", phone: phone.trim() ? `+228 ${phone.trim()}` : "" });
+    // Crée un nouveau compte dédié (données isolées).
+    store.createUser({ firstName: firstName.trim(), lastName: "", phone: phone.trim() ? `+228 ${phone.trim()}` : "" });
     navigate("/otp");
   }
 
@@ -184,7 +185,7 @@ export function InscriptionScreen() {
           Créer mon compte
         </button>
         <div style={{ textAlign: "center", marginTop: 16, fontSize: 14, color: "#607D8B" }}>
-          Déjà inscrit ? <span onClick={() => navigate("/home")} style={{ color: "#1E7D5C", fontWeight: 600, cursor: "pointer" }}>Se connecter</span>
+          Déjà inscrit ? <span onClick={() => navigate("/login")} style={{ color: "#1E7D5C", fontWeight: 600, cursor: "pointer" }}>Se connecter</span>
         </div>
       </div>
     </div>
@@ -266,15 +267,32 @@ export function ProfilMedicalScreen() {
   const [sex, setSex] = useState("Homme");
   const [selected, setSelected] = useState<string[]>([]);
   const [doctor, setDoctor] = useState("");
+  const [glyc, setGlyc] = useState("");
+  const [sys, setSys] = useState("");
+  const [dia, setDia] = useState("");
+  const [weight, setWeight] = useState("");
 
   function togglePatho(p: string) {
     setSelected(cur => cur.includes(p) ? cur.filter(x => x !== p) : [...cur, p]);
   }
 
   function finish(save: boolean) {
-    if (save) store.updateProfile({ age: age.trim() || "—", sex, pathologies: selected, doctor: doctor.trim() || undefined });
+    if (save) {
+      store.updateProfile({ age: age.trim() || "—", sex, pathologies: selected, doctor: doctor.trim() || undefined });
+      // Mesures initiales : seules les valeurs renseignées sont enregistrées.
+      const now = Date.now();
+      const g = parseFloat(glyc.replace(",", "."));
+      if (!isNaN(g) && g > 0) store.addMeasurement({ type: "glycemie", value: g, context: "À jeun", at: now });
+      const s = parseInt(sys, 10), d = parseInt(dia, 10);
+      if (s > 0) store.addMeasurement({ type: "tension", value: s, diastolic: d > 0 ? d : undefined, context: "Matin", at: now });
+      const w = parseFloat(weight.replace(",", "."));
+      if (!isNaN(w) && w > 0) store.addMeasurement({ type: "poids", value: w, at: now });
+    }
     navigate("/home");
   }
+
+  const numInput: React.CSSProperties = { flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B" };
+  const numBox: React.CSSProperties = { height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", display: "flex", alignItems: "center", paddingInline: 16, gap: 8 };
 
   return (
     <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
@@ -328,6 +346,30 @@ export function ProfilMedicalScreen() {
             <input style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B" }} value={doctor} onChange={e => setDoctor(e.target.value)} placeholder="Rechercher un médecin..." />
           </div>
         </div>
+
+        {/* Valeurs de santé initiales (optionnelles) */}
+        <div>
+          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>Vos dernières valeurs (optionnel)</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={numBox}>
+              <span style={{ fontSize: 14, color: "#607D8B", width: 90 }}>Glycémie</span>
+              <input style={numInput} value={glyc} onChange={e => setGlyc(e.target.value.replace(/[^\d.,]/g, ""))} placeholder="ex. 1.20" inputMode="decimal" />
+              <span style={{ fontSize: 13, color: "#B2CEBF" }}>g/L</span>
+            </div>
+            <div style={numBox}>
+              <span style={{ fontSize: 14, color: "#607D8B", width: 90 }}>Tension</span>
+              <input style={{ ...numInput, flex: "none", width: 56, textAlign: "center" }} value={sys} onChange={e => setSys(e.target.value.replace(/\D/g, ""))} placeholder="120" inputMode="numeric" />
+              <span style={{ fontSize: 18, color: "#B2CEBF" }}>/</span>
+              <input style={{ ...numInput, flex: 1, width: 56 }} value={dia} onChange={e => setDia(e.target.value.replace(/\D/g, ""))} placeholder="80" inputMode="numeric" />
+              <span style={{ fontSize: 13, color: "#B2CEBF" }}>mmHg</span>
+            </div>
+            <div style={numBox}>
+              <span style={{ fontSize: 14, color: "#607D8B", width: 90 }}>Poids</span>
+              <input style={numInput} value={weight} onChange={e => setWeight(e.target.value.replace(/[^\d.,]/g, ""))} placeholder="ex. 74.5" inputMode="decimal" />
+              <span style={{ fontSize: 13, color: "#B2CEBF" }}>kg</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div style={{ position: "absolute", bottom: 40, left: 24, right: 24, background: "#FFFFFF" }}>
         <button
@@ -340,6 +382,60 @@ export function ProfilMedicalScreen() {
           onClick={() => finish(false)}
           style={{ textAlign: "center", marginTop: 14, fontSize: 14, color: "#607D8B", cursor: "pointer" }}
         >Passer pour l'instant</div>
+      </div>
+    </div>
+  );
+}
+
+// Connexion : choisir un compte enregistré sur l'appareil
+export function LoginScreen() {
+  const navigate = useNavigate();
+  const store = useStore();
+  const users = store.usersList();
+
+  function connect(id: string) {
+    store.switchUser(id);
+    navigate("/home");
+  }
+
+  return (
+    <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
+      <StatusBar />
+      <div style={{ padding: "16px 24px 0" }}>
+        <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Se connecter</div>
+        <div style={{ fontSize: 14, color: "#607D8B", marginTop: 4 }}>Choisissez votre compte.</div>
+      </div>
+      <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", gap: 12, overflowY: "auto", flex: 1 }}>
+        {users.length === 0 && (
+          <div style={{ fontSize: 14, color: "#607D8B", textAlign: "center", marginTop: 40 }}>
+            Aucun compte enregistré sur cet appareil.
+          </div>
+        )}
+        {users.map(u => {
+          const initials = `${u.firstName[0] ?? ""}${u.lastName[0] ?? ""}`.toUpperCase() || "?";
+          return (
+            <button key={u.id} onClick={() => connect(u.id)} style={{
+              background: "#F4F6F7", border: "1.5px solid #B2CEBF", borderRadius: 12, padding: "14px 16px",
+              display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left",
+            }}>
+              <div style={{ width: 44, height: 44, background: "#1E7D5C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF" }}>{initials}</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#1A2E3B" }}>{u.firstName || "Utilisateur"} {u.lastName}</div>
+                <div style={{ fontSize: 13, color: "#607D8B" }}>{u.phone || "—"}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ position: "absolute", bottom: 40, left: 24, right: 24 }}>
+        <button
+          onClick={() => navigate("/register")}
+          style={{ width: "100%", height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
+        >
+          Créer un nouveau compte
+        </button>
       </div>
     </div>
   );

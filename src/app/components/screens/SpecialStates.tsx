@@ -1,10 +1,12 @@
-import { Plus, AlertTriangle, Phone, ChevronRight, Bell, Users, MessageSquare, Settings } from "lucide-react";
+import { Plus, AlertTriangle, Phone, ChevronRight, ChevronLeft, Bell, Users, MessageSquare, Settings } from "lucide-react";
+import { useNavigate } from "react-router";
 import { StatusBar } from "../StatusBar";
 
 // Push Notification (lock screen)
 export function NotificationScreen() {
+  const navigate = useNavigate();
   return (
-    <div style={{ width: 390, height: 844, background: "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)", display: "flex", flexDirection: "column", position: "relative" }}>
+    <div onClick={() => navigate("/home")} style={{ width: 390, height: 844, background: "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)", display: "flex", flexDirection: "column", position: "relative", cursor: "pointer" }}>
       {/* Lock screen header */}
       <div style={{ padding: "60px 0 30px", textAlign: "center" }}>
         <div style={{ fontSize: 56, fontWeight: 200, color: "#FFFFFF" }}>07:34</div>
@@ -118,6 +120,7 @@ export function EmptyStateScreen() {
 
 // Espace Médecin
 export function MedecinDashboard() {
+  const navigate = useNavigate();
   const patients = [
     { name: "Kofi Amewoyi", patho: "Hypertension · Diabète", lastContact: "Hier", alert: true },
     { name: "Afiwa Dossou", patho: "Insuffisance cardiaque", lastContact: "Il y a 3j", alert: false },
@@ -130,7 +133,12 @@ export function MedecinDashboard() {
       <div style={{ background: "#145C40" }}>
         <StatusBar dark />
         <div style={{ padding: "8px 20px 20px" }}>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>Espace Médecin</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+            <button onClick={() => navigate("/home")} title="Retour" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+              <ChevronLeft size={20} color="rgba(255,255,255,0.85)" />
+            </button>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", letterSpacing: 1, textTransform: "uppercase" }}>Espace Médecin</div>
+          </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "#FFFFFF" }}>Tableau de bord</div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>Dr. Ayeva Koffi · Lomé, Togo</div>
         </div>

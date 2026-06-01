@@ -65,7 +65,9 @@ export function TrackingScreen() {
         <StatusBar />
         <div style={{ padding: "8px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Mon Suivi</div>
-          <Download size={22} color="#607D8B" />
+          <button onClick={() => toast.show("Export PDF bientôt disponible", "info")} title="Exporter" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
+            <Download size={22} color="#607D8B" />
+          </button>
         </div>
         <div style={{ display: "flex", paddingInline: 20, marginTop: 16, borderBottom: "1px solid #F4F6F7" }}>
           {TABS.map(tab => {

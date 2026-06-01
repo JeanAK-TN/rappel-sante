@@ -28,6 +28,12 @@ export interface IntakeLog {
   [dateKey: string]: string[];
 }
 
+export interface NotificationPrefs {
+  rappels: boolean;
+  alertes: boolean;
+  conseils: boolean;
+}
+
 export interface Profile {
   firstName: string;
   lastName: string;
@@ -38,6 +44,8 @@ export interface Profile {
   doctor?: string;
   dataSharing: boolean;
   offlineMode: boolean;
+  language: string;
+  notifications: NotificationPrefs;
 }
 
 export interface AppState {
@@ -45,4 +53,10 @@ export interface AppState {
   medications: Medication[];
   intakeLog: IntakeLog;
   measurements: Measurement[];
+}
+
+/** État racine : plusieurs utilisateurs, chacun avec ses propres données. */
+export interface RootState {
+  currentUserId: string | null;
+  users: Record<string, AppState>;
 }

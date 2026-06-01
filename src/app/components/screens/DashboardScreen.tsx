@@ -82,9 +82,13 @@ export function DashboardScreen() {
             <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Bonjour, {profile.firstName} 👋</div>
             <div style={{ fontSize: 14, color: "#607D8B", marginTop: 2 }}>{dateLabel}</div>
           </div>
-          <div style={{ width: 40, height: 40, background: "#1E7D5C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button
+            onClick={() => navigate("/profile")}
+            title="Mon profil"
+            style={{ width: 40, height: 40, background: "#1E7D5C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+          >
             <span style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>{initials}</span>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -135,7 +139,7 @@ export function DashboardScreen() {
             {[
               { icon: <PenLine size={22} color="#1E7D5C" />, label: "Saisir valeur", to: "/tracking" },
               { icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="8" y="3" width="8" height="18" rx="4" fill="#1E7D5C" /><rect x="3" y="8" width="18" height="8" rx="4" fill="#1E7D5C" opacity="0.4" /></svg>, label: "Médicament", to: "/medications" },
-              { icon: <Stethoscope size={22} color="#1E7D5C" />, label: "Médecin", to: "/profile" },
+              { icon: <Stethoscope size={22} color="#1E7D5C" />, label: "Médecin", to: "/medecin" },
             ].map((item, i) => (
               <div key={i} onClick={() => navigate(item.to)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <div style={{ width: 64, height: 64, background: "#FFFFFF", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0px 2px 12px rgba(0,0,0,0.08)" }}>

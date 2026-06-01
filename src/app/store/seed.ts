@@ -1,6 +1,8 @@
 // Données de départ : reproduisent les maquettes pour une première ouverture réaliste.
-import type { AppState, Measurement } from "./types";
+import type { AppState, Measurement, Profile, RootState } from "./types";
 import { dateKey } from "./health";
+
+export const DEMO_USER_ID = "demo-kofi";
 
 const DAY = 86400000;
 
@@ -60,6 +62,8 @@ export function initialState(): AppState {
       doctor: "Dr. Ayeva Koffi",
       dataSharing: true,
       offlineMode: false,
+      language: "Français",
+      notifications: { rappels: true, alertes: true, conseils: true },
     },
     medications: [
       {
@@ -83,4 +87,24 @@ export function initialState(): AppState {
     intakeLog: buildIntakeHistory(),
     measurements: [...glyc, ...tension, ...poids],
   };
+}
+
+/** Profil vierge pour un nouvel utilisateur, avec quelques valeurs par défaut. */
+export function blankProfile(overrides: Partial<Profile> = {}): Profile {
+  return {
+    firstName: "", lastName: "", age: "", phone: "", sex: "Homme",
+    pathologies: [], doctor: undefined, dataSharing: true, offlineMode: false,
+    language: "Français", notifications: { rappels: true, alertes: true, conseils: true },
+    ...overrides,
+  };
+}
+
+/** Nouvel utilisateur sans aucune donnée (médicaments/mesures vides). */
+export function blankUser(overrides: Partial<Profile> = {}): AppState {
+  return { profile: blankProfile(overrides), medications: [], intakeLog: {}, measurements: [] };
+}
+
+/** État racine initial : un seul compte de démonstration (Kofi). */
+export function initialRoot(): RootState {
+  return { currentUserId: DEMO_USER_ID, users: { [DEMO_USER_ID]: initialState() } };
 }
