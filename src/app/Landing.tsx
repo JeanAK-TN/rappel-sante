@@ -21,8 +21,15 @@ const C = {
 
 const FONT = "'Inter', system-ui, sans-serif";
 
-// Apparition au défilement
-function Reveal({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
+// Apparition au défilement (direction variable : haut, gauche, droite, zoom)
+type RevealFrom = "up" | "left" | "right" | "scale";
+const FROM: Record<RevealFrom, string> = {
+  up: "translateY(34px)",
+  left: "translateX(-44px)",
+  right: "translateX(44px)",
+  scale: "scale(0.9)",
+};
+function Reveal({ children, delay = 0, from = "up", style }: { children: React.ReactNode; delay?: number; from?: RevealFrom; style?: React.CSSProperties }) {
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
   useEffect(() => {
@@ -35,7 +42,7 @@ function Reveal({ children, delay = 0, style }: { children: React.ReactNode; del
     return () => io.disconnect();
   }, []);
   return (
-    <div ref={ref} style={{ ...style, opacity: shown ? 1 : 0, transform: shown ? "none" : "translateY(28px)", transition: `opacity .7s ease ${delay}ms, transform .7s cubic-bezier(.2,.7,.2,1) ${delay}ms` }}>
+    <div ref={ref} style={{ ...style, opacity: shown ? 1 : 0, transform: shown ? "none" : FROM[from], transition: `opacity .7s ease ${delay}ms, transform .8s cubic-bezier(.2,.7,.2,1) ${delay}ms` }}>
       {children}
     </div>
   );
@@ -123,10 +130,31 @@ function Logo({ size = 40, ring = "rgba(255,255,255,0.18)" }: { size?: number; r
 
 export default function Landing() {
   const navigate = useNavigate();
+  const rootRef = useRef<HTMLDivElement>(null);
   const goto = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
+  // Parallaxe : met à jour des variables CSS au défilement (via rAF, sans re-render).
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const el = rootRef.current;
+        if (el) {
+          el.style.setProperty("--pSlow", `${y * 0.06}px`);
+          el.style.setProperty("--pMed", `${y * 0.16}px`);
+          el.style.setProperty("--pFast", `${y * 0.28}px`);
+        }
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); };
+  }, []);
+
   return (
-    <div style={{ fontFamily: FONT, background: "#FFFFFF", color: C.ink, overflowX: "hidden" }}>
+    <div ref={rootRef} style={{ fontFamily: FONT, background: "#FFFFFF", color: C.ink, overflowX: "hidden" }}>
       <style>{KEYFRAMES}</style>
 
       {/* NAV */}
@@ -147,16 +175,18 @@ export default function Landing() {
 
       {/* HERO */}
       <header style={{ position: "relative", background: `linear-gradient(135deg, ${C.primaryDark} 0%, ${C.primary} 55%, #2a9b73 100%)`, color: "#FFFFFF", overflow: "hidden" }}>
-        {/* nœuds numériques flottants */}
-        {[
-          { t: "12%", l: "8%", s: 10, d: 0 }, { t: "70%", l: "14%", s: 6, d: 1.2 }, { t: "30%", l: "88%", s: 8, d: 0.6 },
-          { t: "78%", l: "82%", s: 12, d: 1.8 }, { t: "20%", l: "60%", s: 5, d: 0.9 }, { t: "85%", l: "45%", s: 7, d: 2.2 },
-        ].map((p, i) => (
-          <span key={i} style={{ position: "absolute", top: p.t, left: p.l, width: p.s, height: p.s, borderRadius: "50%", background: "rgba(255,255,255,0.35)", animation: `rs-float 6s ease-in-out ${p.d}s infinite`, boxShadow: "0 0 12px rgba(255,255,255,0.4)" }} />
-        ))}
+        {/* nœuds numériques flottants (parallaxe) */}
+        <div style={{ position: "absolute", inset: 0, transform: "translateY(var(--pMed, 0px))", pointerEvents: "none" }}>
+          {[
+            { t: "12%", l: "8%", s: 10, d: 0 }, { t: "70%", l: "14%", s: 6, d: 1.2 }, { t: "30%", l: "88%", s: 8, d: 0.6 },
+            { t: "78%", l: "82%", s: 12, d: 1.8 }, { t: "20%", l: "60%", s: 5, d: 0.9 }, { t: "85%", l: "45%", s: 7, d: 2.2 },
+          ].map((p, i) => (
+            <span key={i} style={{ position: "absolute", top: p.t, left: p.l, width: p.s, height: p.s, borderRadius: "50%", background: "rgba(255,255,255,0.35)", animation: `rs-float 6s ease-in-out ${p.d}s infinite`, boxShadow: "0 0 12px rgba(255,255,255,0.4)" }} />
+          ))}
+        </div>
 
-        {/* ligne ECG animée */}
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, width: "100%", height: 120, opacity: 0.9 }}>
+        {/* ligne ECG animée (parallaxe lente) */}
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, width: "100%", height: 120, opacity: 0.9, transform: "translateY(var(--pSlow, 0px))" }}>
           <path d={ecgPath(1200, 60)} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={2} />
           <path d={ecgPath(1200, 60)} fill="none" stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round"
             style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,0.9))", strokeDasharray: "80 4000", animation: "rs-ecg 3.2s linear infinite" }} />
@@ -198,7 +228,7 @@ export default function Landing() {
             { v: <Counter to={8.6} decimals={1} suffix=" M" />, label: "d'abonnés mobiles", color: C.blue },
             { v: <Counter to={90} suffix=" %" />, label: "n'ont jamais testé leur glycémie", color: C.red },
           ].map((s, i) => (
-            <Reveal key={i} delay={i * 90}>
+            <Reveal key={i} delay={i * 90} from="scale">
               <div style={{ background: "#FFFFFF", borderRadius: 18, padding: "26px 22px", boxShadow: "0 4px 24px rgba(0,0,0,0.05)", textAlign: "center" }}>
                 <div style={{ fontSize: 40, fontWeight: 800, color: s.color, letterSpacing: -1 }}>{s.v}</div>
                 <div style={{ fontSize: 14, color: C.sub, marginTop: 6 }}>{s.label}</div>
@@ -225,7 +255,7 @@ export default function Landing() {
             { t: "Suivi inexistant", d: "Tension et glycémie rarement mesurées et notées.", c: C.red },
             { t: "Manque d'accompagnement", d: "Peu de conseils adaptés au quotidien des patients.", c: C.blue },
           ].map((b, i) => (
-            <Reveal key={i} delay={i * 100}>
+            <Reveal key={i} delay={i * 100} from="left">
               <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderLeft: `4px solid ${b.c}`, borderRadius: 16, padding: 22, height: "100%" }}>
                 <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>{b.t}</div>
                 <div style={{ color: C.sub, fontSize: 14, lineHeight: 1.6 }}>{b.d}</div>
@@ -247,7 +277,7 @@ export default function Landing() {
             {features.map((f, i) => {
               const Icon = f.icon;
               return (
-                <Reveal key={i} delay={i * 80}>
+                <Reveal key={i} delay={i * 80} from={i % 2 === 0 ? "left" : "right"}>
                   <div className="rs-card" style={{ background: "#FFFFFF", borderRadius: 20, padding: 26, boxShadow: "0 4px 24px rgba(0,0,0,0.05)", height: "100%", transition: "transform .25s ease, box-shadow .25s ease" }}>
                     <div style={{ width: 54, height: 54, borderRadius: 16, background: `${f.color}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
                       <Icon size={26} color={f.color} />
@@ -282,8 +312,9 @@ export default function Landing() {
             { node: <MedicationsScreen />, label: "Médicaments", d: 150 },
             { node: <TrackingScreen />, label: "Suivi", d: 300 },
           ].map((s, i) => (
-            <Reveal key={i} delay={s.d}>
-              <div style={{ animation: `rs-floaty 5s ease-in-out ${i * 0.5}s infinite` }}>
+            <Reveal key={i} delay={s.d} from={i === 0 ? "left" : i === 2 ? "right" : "up"}>
+              {/* Aperçu non interactif (vitrine) : empêche les clics de quitter la landing */}
+              <div style={{ animation: `rs-floaty 5s ease-in-out ${i * 0.5}s infinite`, pointerEvents: "none", userSelect: "none" }}>
                 <ScreenFrame label={s.label} scale={0.52}>{s.node}</ScreenFrame>
               </div>
             </Reveal>
@@ -302,7 +333,7 @@ export default function Landing() {
             {local.map((l, i) => {
               const Icon = l.icon;
               return (
-                <Reveal key={i} delay={i * 90}>
+                <Reveal key={i} delay={i * 90} from="right">
                   <div style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 18, padding: 24, height: "100%" }}>
                     <Icon size={28} color={C.light} />
                     <div style={{ fontWeight: 700, fontSize: 17, margin: "14px 0 8px" }}>{l.title}</div>
@@ -346,7 +377,7 @@ export default function Landing() {
 
       {/* CTA FINAL */}
       <section style={{ padding: "0 24px 80px" }}>
-        <Reveal>
+        <Reveal from="scale">
           <div style={{ maxWidth: 1120, margin: "0 auto", background: `linear-gradient(135deg, ${C.primary}, ${C.primaryDark})`, borderRadius: 28, padding: "60px 32px", textAlign: "center", color: "#FFFFFF", position: "relative", overflow: "hidden" }}>
             <span style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
             <span style={{ position: "absolute", bottom: -50, left: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
