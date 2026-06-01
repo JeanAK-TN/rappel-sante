@@ -78,6 +78,30 @@ npm run cap:sync   # recompile le web et met à jour le projet Android
 
 ---
 
+## PWA (installer sur iPhone/Android sans store, sans Mac)
+
+L'application est aussi une **PWA** (Progressive Web App) : installable depuis le
+navigateur, fonctionne hors-ligne (le shell est mis en cache par un service worker).
+Idéal pour tester sur iPhone **sans Mac ni App Store**.
+
+### Étapes
+
+1. Compiler : `npm run build` (génère `dist/` avec `manifest.webmanifest` + `sw.js`).
+2. Héberger `dist/` sur une URL **HTTPS** (obligatoire pour installer une PWA) :
+   - **Netlify Drop** (glisser-déposer le dossier `dist` sur app.netlify.com/drop)
+   - **Vercel**, **GitHub Pages**, **Firebase Hosting**, etc.
+3. Sur le téléphone, ouvrir l'URL :
+   - **iPhone (Safari)** : bouton Partager → **« Sur l'écran d'accueil »**.
+   - **Android (Chrome)** : menu → **« Installer l'application »**.
+
+L'app s'ouvre alors en plein écran, avec l'icône Rappel Santé.
+
+> Icônes : générées depuis `public/icon.svg` via `node scripts/gen-icons.mjs`
+> (recrée `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`).
+
+> Limites iOS : les notifications push sont restreintes sur iOS pour les PWA.
+> Pour des notifications complètes, viser l'app native (Capacitor + Mac).
+
 ## iOS (IPA) — nécessite un Mac
 
 Le code est **prêt pour iOS**, mais Apple impose **macOS + Xcode** pour compiler.
