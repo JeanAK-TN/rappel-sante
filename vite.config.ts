@@ -18,6 +18,8 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  // Chemin de base : '/' en local, '/rappel-sante/' pour GitHub Pages (défini par le workflow).
+  base: process.env.PAGES_BASE || '/',
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if
@@ -37,7 +39,7 @@ export default defineConfig({
         background_color: '#1E7D5C',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: '.',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },

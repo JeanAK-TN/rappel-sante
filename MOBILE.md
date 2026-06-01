@@ -102,6 +102,23 @@ L'app s'ouvre alors en plein écran, avec l'icône Rappel Santé.
 > Limites iOS : les notifications push sont restreintes sur iOS pour les PWA.
 > Pour des notifications complètes, viser l'app native (Capacitor + Mac).
 
+### Déployer sur GitHub Pages (automatique)
+
+Un workflow ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)) build et
+publie le site à chaque `push` sur `main`.
+
+Une seule configuration à faire (une fois) :
+
+1. Sur GitHub : **Settings → Pages → Build and deployment → Source = GitHub Actions**.
+2. `git push` sur `main`. Le workflow build avec la base `/rappel-sante/`,
+   ajoute un `404.html` (fallback SPA) et publie.
+3. URL finale : **https://JeanAK-TN.github.io/rappel-sante/**
+
+Détails techniques gérés automatiquement :
+- `base` Vite = `/rappel-sante/` (via la variable `PAGES_BASE` du workflow) ;
+- `basename` du routeur aligné sur la base ;
+- `404.html` = copie de `index.html` pour que les routes profondes fonctionnent.
+
 ## iOS (IPA) — nécessite un Mac
 
 Le code est **prêt pour iOS**, mais Apple impose **macOS + Xcode** pour compiler.

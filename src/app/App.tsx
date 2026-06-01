@@ -26,10 +26,12 @@ function Phone({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  // Aligne le routeur sur le chemin de base (vide en local, "/rappel-sante" sur GitHub Pages).
+  const basename = import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
     <AppStoreProvider>
     <ToastProvider>
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         {/* Vue d'ensemble (toutes les maquettes) — utile pour la présentation */}
         <Route path="/gallery" element={<Gallery />} />
