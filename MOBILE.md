@@ -1,7 +1,12 @@
 # Construire l'application mobile (Capacitor)
 
-L'application web est empaquetée en application mobile avec **Capacitor**.
+L'application web est empaquetée en application mobile avec **Capacitor 6**.
 La même base de code sert à Android et à iOS.
+
+> Versions du projet Android : **AGP 8.2.1**, **Gradle 8.2.1**, **JDK 17**,
+> compileSdk 34. Compatibles avec Android Studio Iguana (2023.2) et plus récent.
+> Dans Android Studio, le JDK de Gradle doit être en **17**
+> (Settings → Build Tools → Gradle → Gradle JDK ; le JDK intégré convient).
 
 - `appId` : `tg.rappelsante.app`
 - `appName` : Rappel Santé
