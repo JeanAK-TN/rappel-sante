@@ -322,18 +322,26 @@ export default function Landing() {
           <h2 style={h2}>Groupe 20 · Projet Intégrateur 2026</h2>
           <p style={{ ...lead, maxWidth: 700 }}>Dix étudiants réunis autour d'un projet à fort impact social.</p>
         </Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 36 }}>
-          {team.map((name, i) => (
-            <Reveal key={i} delay={i * 50}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 14, padding: "12px 14px" }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.light, color: C.primary, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                  {initials(name)}
-                </div>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{name}</span>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal style={{ marginTop: 36 }}>
+          <div className="rs-marquee" style={{ position: "relative", overflow: "hidden", paddingBlock: 8 }}>
+            <div className="rs-track" style={{ display: "flex", gap: 18, width: "max-content" }}>
+              {[...team, ...team].map((name, i) => {
+                const colors = [C.primary, C.blue, "#43A047", "#7E57C2", "#FF7043"];
+                const c = colors[i % colors.length];
+                return (
+                  <div key={i} className="rs-mq-card" style={{ width: 230, flexShrink: 0, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 18, padding: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.05)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 10 }}>
+                    <div style={{ width: 60, height: 60, borderRadius: "50%", background: `${c}1A`, color: c, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 20, border: `2px solid ${c}33` }}>
+                      {initials(name)}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{name}</div>
+                    <div style={{ fontSize: 12, color: C.sub }}>Groupe 20 · PI 2026</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{ textAlign: "center", fontSize: 13, color: C.sub, marginTop: 16 }}>Passez la souris sur une carte pour mettre le défilement en pause.</div>
+        </Reveal>
       </section>
 
       {/* CTA FINAL */}
@@ -383,9 +391,16 @@ const btnLight: React.CSSProperties = { background: "#FFFFFF", color: C.primary,
 const btnGhost: React.CSSProperties = { background: "rgba(255,255,255,0.12)", color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 12, padding: "14px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: FONT };
 
 const KEYFRAMES = `
+html { scroll-behavior: smooth; }
 @keyframes rs-ecg { from { stroke-dashoffset: 4080; } to { stroke-dashoffset: 0; } }
 @keyframes rs-float { 0%,100% { transform: translateY(0); opacity:.6; } 50% { transform: translateY(-16px); opacity:1; } }
 @keyframes rs-floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes rs-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .rs-card:hover { transform: translateY(-6px); box-shadow: 0 14px 38px rgba(0,0,0,0.12) !important; }
+.rs-marquee { -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.rs-track { animation: rs-marquee 34s linear infinite; }
+.rs-track:hover { animation-play-state: paused; }
+.rs-mq-card { transition: transform .25s ease, box-shadow .25s ease; }
+.rs-mq-card:hover { transform: translateY(-6px); box-shadow: 0 14px 34px rgba(0,0,0,0.12); }
 @media (max-width: 720px) { .rs-navlinks { display: none !important; } }
 `;
