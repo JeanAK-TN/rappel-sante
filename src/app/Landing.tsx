@@ -77,6 +77,36 @@ function Counter({ to, decimals = 0, prefix = "", suffix = "", duration = 1700 }
   return <span ref={ref}>{prefix}{val.toFixed(decimals).replace(".", ",")}{suffix}</span>;
 }
 
+// Parallaxe relative à la position dans le viewport (fonctionne sur toute la page)
+function Parallax({ speed = 0.15, children, style }: { speed?: number; children: React.ReactNode; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const delta = (rect.top + rect.height / 2) - window.innerHeight / 2;
+      el.style.transform = `translate3d(0, ${(-delta * speed).toFixed(1)}px, 0)`;
+    };
+    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    update();
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); cancelAnimationFrame(raf); };
+  }, [speed]);
+  return <div ref={ref} style={{ willChange: "transform", ...style }}>{children}</div>;
+}
+
+// Bulle décorative douce (placée en absolu, derrière le contenu)
+function Blob({ color, size, top, left, right, bottom, speed = 0.12 }: { color: string; size: number; top?: number | string; left?: number | string; right?: number | string; bottom?: number | string; speed?: number }) {
+  return (
+    <Parallax speed={speed} style={{ position: "absolute", top, left, right, bottom, zIndex: -1, pointerEvents: "none" }}>
+      <div style={{ width: size, height: size, borderRadius: "50%", background: color, filter: "blur(2px)" }} />
+    </Parallax>
+  );
+}
+
 // Tracé ECG répété sur la largeur
 function ecgPath(width: number, mid: number): string {
   let d = `M0,${mid}`;
@@ -239,7 +269,9 @@ export default function Landing() {
       </section>
 
       {/* PROBLÈME */}
-      <section id="probleme" style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px" }}>
+      <section id="probleme" style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px", position: "relative", overflow: "hidden" }}>
+        <Blob color="rgba(255,152,0,0.09)" size={230} top={30} right={-40} speed={0.18} />
+        <Blob color="rgba(30,125,92,0.07)" size={180} bottom={20} left={-50} speed={0.12} />
         <Reveal>
           <SectionLabel>Le défi</SectionLabel>
           <h2 style={h2}>Une urgence sanitaire silencieuse</h2>
@@ -266,8 +298,10 @@ export default function Landing() {
       </section>
 
       {/* FONCTIONNALITÉS */}
-      <section id="features" style={{ background: C.bg }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px" }}>
+      <section id="features" style={{ background: C.bg, position: "relative", overflow: "hidden" }}>
+        <Blob color="rgba(30,125,92,0.10)" size={280} top={40} left={-70} speed={0.22} />
+        <Blob color="rgba(33,150,243,0.08)" size={220} bottom={30} right={-50} speed={0.14} />
+        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px", position: "relative", zIndex: 1 }}>
           <Reveal>
             <SectionLabel>La solution</SectionLabel>
             <h2 style={h2}>Tout ce qu'il faut pour bien se soigner</h2>
@@ -300,7 +334,8 @@ export default function Landing() {
       </section>
 
       {/* APERÇU APP */}
-      <section id="apercu" style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px" }}>
+      <section id="apercu" style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px", position: "relative", overflow: "hidden" }}>
+        <Blob color="rgba(30,125,92,0.08)" size={260} top={60} right={-50} speed={0.16} />
         <Reveal>
           <SectionLabel>L'application</SectionLabel>
           <h2 style={h2}>Simple, claire, rassurante</h2>
@@ -313,18 +348,22 @@ export default function Landing() {
             { node: <TrackingScreen />, label: "Suivi", d: 300 },
           ].map((s, i) => (
             <Reveal key={i} delay={s.d} from={i === 0 ? "left" : i === 2 ? "right" : "up"}>
-              {/* Aperçu non interactif (vitrine) : empêche les clics de quitter la landing */}
-              <div style={{ animation: `rs-floaty 5s ease-in-out ${i * 0.5}s infinite`, pointerEvents: "none", userSelect: "none" }}>
-                <ScreenFrame label={s.label} scale={0.52}>{s.node}</ScreenFrame>
-              </div>
+              <Parallax speed={i === 1 ? 0.05 : 0.16}>
+                {/* Aperçu non interactif (vitrine) : empêche les clics de quitter la landing */}
+                <div style={{ animation: `rs-floaty 5s ease-in-out ${i * 0.5}s infinite`, pointerEvents: "none", userSelect: "none" }}>
+                  <ScreenFrame label={s.label} scale={0.52}>{s.node}</ScreenFrame>
+                </div>
+              </Parallax>
             </Reveal>
           ))}
         </div>
       </section>
 
       {/* ANCRAGE LOCAL */}
-      <section style={{ background: C.primaryDark, color: "#FFFFFF" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px" }}>
+      <section style={{ background: C.primaryDark, color: "#FFFFFF", position: "relative", overflow: "hidden" }}>
+        <Blob color="rgba(255,255,255,0.06)" size={300} top={-50} right={-60} speed={0.2} />
+        <Blob color="rgba(120,200,170,0.10)" size={240} bottom={-50} left={-50} speed={0.12} />
+        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "80px 24px", position: "relative", zIndex: 1 }}>
           <Reveal>
             <SectionLabel light>Pensée pour le Togo</SectionLabel>
             <h2 style={{ ...h2, color: "#FFFFFF" }}>Un ancrage local profond</h2>
@@ -379,8 +418,8 @@ export default function Landing() {
       <section style={{ padding: "0 24px 80px" }}>
         <Reveal from="scale">
           <div style={{ maxWidth: 1120, margin: "0 auto", background: `linear-gradient(135deg, ${C.primary}, ${C.primaryDark})`, borderRadius: 28, padding: "60px 32px", textAlign: "center", color: "#FFFFFF", position: "relative", overflow: "hidden" }}>
-            <span style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
-            <span style={{ position: "absolute", bottom: -50, left: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+            <Blob color="rgba(255,255,255,0.10)" size={180} top={-40} right={-40} speed={0.22} />
+            <Blob color="rgba(255,255,255,0.07)" size={160} bottom={-50} left={-30} speed={0.14} />
             <h2 style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 800, letterSpacing: -1, margin: 0 }}>Prêt à reprendre votre santé en main ?</h2>
             <p style={{ fontSize: 17, opacity: 0.9, marginTop: 14 }}>Découvrez l'application Rappel Santé en quelques secondes.</p>
             <button onClick={() => navigate("/welcome")} style={{ ...btnLight, marginTop: 28, display: "inline-flex", alignItems: "center", gap: 10, fontSize: 17 }}>
