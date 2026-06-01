@@ -99,7 +99,7 @@ export function ProfileScreen() {
         {/* Réinitialiser la démo */}
         <div style={{ marginInline: 20, marginBottom: 12 }}>
           <div
-            onClick={() => { store.resetAll(); toast.show("Démo réinitialisée 🔄", "info"); navigate("/"); }}
+            onClick={() => { store.resetAll(); toast.show("Démo réinitialisée 🔄", "info"); navigate("/welcome"); }}
             style={{ background: "#FFFFFF", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, boxShadow: "0px 2px 12px rgba(0,0,0,0.06)", cursor: "pointer" }}
           >
             <RotateCcw size={18} color="#607D8B" />

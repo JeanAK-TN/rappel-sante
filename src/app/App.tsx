@@ -3,6 +3,7 @@ import { AppStoreProvider } from "./store/AppStore";
 import { ToastProvider } from "./ui/toast";
 import { PhoneFrame } from "./layouts/PhoneFrame";
 import Gallery from "./Gallery";
+import Landing from "./Landing";
 import {
   SplashScreen, OnboardingSlide1, OnboardingSlide2, OnboardingSlide3,
   InscriptionScreen, OTPScreen, ProfilMedicalScreen, LoginScreen
@@ -32,8 +33,11 @@ export default function App() {
         {/* Vue d'ensemble (toutes les maquettes) — utile pour la présentation */}
         <Route path="/gallery" element={<Gallery />} />
 
+        {/* Landing page (présentation web, pleine largeur) */}
+        <Route path="/" element={<Landing />} />
+
         {/* Flux 1 — Onboarding */}
-        <Route path="/" element={<Phone><SplashScreen /></Phone>} />
+        <Route path="/welcome" element={<Phone><SplashScreen /></Phone>} />
         <Route path="/onboarding/1" element={<Phone><OnboardingSlide1 /></Phone>} />
         <Route path="/onboarding/2" element={<Phone><OnboardingSlide2 /></Phone>} />
         <Route path="/onboarding/3" element={<Phone><OnboardingSlide3 /></Phone>} />

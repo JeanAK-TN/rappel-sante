@@ -94,7 +94,7 @@ export default function Gallery() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/welcome")}
             style={{
               marginLeft: "auto", padding: "10px 20px", background: "#1E7D5C", border: "none",
               borderRadius: 10, color: "#FFFFFF", fontSize: 14, fontWeight: 600, cursor: "pointer",
