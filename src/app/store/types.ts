@@ -10,6 +10,12 @@ export interface Medication {
   prescriber?: string; // ex. "Dr. Ayeva Koffi"
   since?: string;      // ex. "12 janv. 2025"
   notice?: string;     // texte de la notice
+  // Posologie (prescription)
+  frequencyUnit?: "jour" | "semaine" | "mois"; // n prises par jour/semaine/mois (n = times.length)
+  lifelong?: boolean;                          // traitement à vie
+  durationValue?: number;                      // sinon, durée limitée : valeur
+  durationUnit?: "jours" | "semaines" | "mois"; // unité de la durée limitée
+  instructions?: string;                        // consignes du médecin (ex. "pendant le repas")
 }
 
 export type MeasureType = "glycemie" | "tension" | "poids";

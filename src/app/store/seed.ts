@@ -70,16 +70,19 @@ export function initialState(): AppState {
       {
         id: "med-amlodipine", name: "Amlodipine 5mg", dose: "1 comprimé", category: "Antihypertenseur",
         color: "#1E7D5C", times: ["08:00"], prescriber: "Dr. Ayeva Koffi", since: "12 janv. 2025",
+        frequencyUnit: "jour", lifelong: true,
         notice: "L'amlodipine est un antagoniste calcique utilisé pour traiter l'hypertension artérielle et l'angine de poitrine.",
       },
       {
         id: "med-metformine", name: "Metformine 500mg", dose: "1 comprimé", category: "Antidiabétique",
         color: "#2196F3", times: ["12:00"], prescriber: "Dr. Ayeva Koffi", since: "03 mars 2025",
+        frequencyUnit: "jour", lifelong: true, instructions: "À prendre pendant le repas.",
         notice: "La metformine réduit la production de glucose par le foie et améliore la sensibilité à l'insuline.",
       },
       {
         id: "med-losartan", name: "Losartan 50mg", dose: "1 comprimé", category: "Antihypertenseur",
         color: "#FF9800", times: ["20:00"], prescriber: "Dr. Ayeva Koffi", since: "12 janv. 2025",
+        frequencyUnit: "jour", lifelong: true,
         notice: "Le losartan est un antagoniste des récepteurs de l'angiotensine II, utilisé contre l'hypertension.",
       },
     ],

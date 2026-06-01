@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, AlertTriangle, Users, Bell, MessageSquare, S
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
-import { statusOf, formatValue, STATUS_COLOR, MEASURE_META, type HealthStatus } from "../../store/health";
+import { statusOf, formatValue, STATUS_COLOR, MEASURE_META, frequencyLabel, durationLabel, type HealthStatus } from "../../store/health";
 import { MedicationSheet } from "./MedicationsScreen";
 import type { MeasureType } from "../../store/types";
 
@@ -223,7 +223,8 @@ export function MedecinPatient() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 600, color: "#1A2E3B" }}>{med.name}</div>
                 <div style={{ fontSize: 12, color: "#607D8B", marginTop: 2 }}>{med.dose} · {med.times.join(", ")}</div>
-                <div style={{ fontSize: 11, color: "#B2CEBF", marginTop: 2 }}>{med.category}</div>
+                <div style={{ fontSize: 11, color: "#1E7D5C", fontWeight: 600, marginTop: 2 }}>{frequencyLabel(med)} · {durationLabel(med)}</div>
+                {med.instructions && <div style={{ fontSize: 11, color: "#B2CEBF", marginTop: 2, fontStyle: "italic" }}>{med.instructions}</div>}
               </div>
               <button
                 onClick={() => { store.removeMedicationFor(id, med.id); toast.show("Médicament retiré", "info"); }}

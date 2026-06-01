@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Eye, EyeOff, Phone, Lock, User, Search, ChevronLeft } from "lucide-react";
+import { Eye, EyeOff, Phone, Lock, User, Search, ChevronLeft, Stethoscope } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 
@@ -432,12 +432,23 @@ export function LoginScreen() {
           );
         })}
       </div>
-      <div style={{ position: "absolute", bottom: 40, left: 24, right: 24 }}>
+      <div style={{ position: "absolute", bottom: 32, left: 24, right: 24 }}>
         <button
           onClick={() => navigate("/register")}
           style={{ width: "100%", height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
         >
           Créer un nouveau compte
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
+          <div style={{ flex: 1, height: 1, background: "#E0E0E0" }} />
+          <span style={{ fontSize: 12, color: "#B2CEBF" }}>ou</span>
+          <div style={{ flex: 1, height: 1, background: "#E0E0E0" }} />
+        </div>
+        <button
+          onClick={() => navigate("/medecin")}
+          style={{ width: "100%", height: 48, background: "#145C40", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+        >
+          <Stethoscope size={18} color="#FFFFFF" /> Espace médecin
         </button>
       </div>
     </div>

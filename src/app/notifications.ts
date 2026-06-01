@@ -23,7 +23,8 @@ export async function syncMedicationReminders(meds: Medication[], enabled: boole
     if (!enabled) return;
 
     let id = 1;
-    const notifications = meds.flatMap(med =>
+    // Rappels quotidiens uniquement (les fréquences hebdo/mensuelles ne sont pas planifiées ici).
+    const notifications = meds.filter(m => (m.frequencyUnit ?? "jour") === "jour").flatMap(med =>
       med.times.map(time => {
         const [hour, minute] = time.split(":").map(Number);
         return {

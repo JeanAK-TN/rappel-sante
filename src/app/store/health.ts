@@ -1,5 +1,19 @@
 // Seuils médicaux, statuts colorés et utilitaires de présentation.
-import type { MeasureType, Measurement, IntakeLog } from "./types";
+import type { MeasureType, Measurement, IntakeLog, Medication } from "./types";
+
+/** Libellé de fréquence, ex. "2 fois par jour" / "1 fois par mois". */
+export function frequencyLabel(med: Pick<Medication, "times" | "frequencyUnit">): string {
+  const n = Math.max(1, med.times.length);
+  const unit = med.frequencyUnit ?? "jour";
+  return `${n} fois par ${unit}`;
+}
+
+/** Libellé de durée, ex. "À vie" / "Pendant 6 mois" / "Non précisée". */
+export function durationLabel(med: Pick<Medication, "lifelong" | "durationValue" | "durationUnit">): string {
+  if (med.lifelong) return "À vie";
+  if (med.durationValue && med.durationUnit) return `Pendant ${med.durationValue} ${med.durationUnit}`;
+  return "Non précisée";
+}
 
 export type HealthStatus = "normal" | "warning" | "critical";
 

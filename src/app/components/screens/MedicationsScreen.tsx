@@ -4,7 +4,7 @@ import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
 import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
-import { dayCompletion } from "../../store/health";
+import { dayCompletion, frequencyLabel, durationLabel } from "../../store/health";
 import { syncMedicationReminders } from "../../notifications";
 import type { Medication } from "../../store/types";
 
@@ -225,6 +225,11 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
   const [category, setCategory] = useState(initial?.category ?? "");
   const [times, setTimes] = useState<string[]>(initial?.times?.length ? [...initial.times] : ["08:00"]);
   const [color, setColor] = useState(initial?.color ?? COLORS[0]);
+  const [frequencyUnit, setFrequencyUnit] = useState<"jour" | "semaine" | "mois">(initial?.frequencyUnit ?? "jour");
+  const [lifelong, setLifelong] = useState<boolean>(initial?.lifelong ?? false);
+  const [durationValue, setDurationValue] = useState(initial?.durationValue ? String(initial.durationValue) : "");
+  const [durationUnit, setDurationUnit] = useState<"jours" | "semaines" | "mois">(initial?.durationUnit ?? "mois");
+  const [instructions, setInstructions] = useState(initial?.instructions ?? "");
 
   const canSave = name.trim().length > 0;
 
@@ -234,6 +239,11 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
       name: name.trim(), dose: dose.trim() || "1 comprimé",
       category: category.trim() || "Médicament", color,
       times: Array.from(new Set(times)).sort(),
+      frequencyUnit,
+      lifelong,
+      durationValue: lifelong ? undefined : parseInt(durationValue, 10) || undefined,
+      durationUnit: lifelong ? undefined : durationUnit,
+      instructions: instructions.trim() || undefined,
       prescriber: initial?.prescriber, since: initial?.since, notice: initial?.notice,
     });
   }
@@ -243,6 +253,10 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
     paddingInline: 14, fontSize: 15, color: "#1A2E3B", outline: "none", boxSizing: "border-box",
   };
   const labelStyle: React.CSSProperties = { fontSize: 12, color: "#607D8B", fontWeight: 600, marginBottom: 6 };
+  const chipStyle = (on: boolean): React.CSSProperties => ({
+    flex: 1, height: 42, borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: on ? 600 : 400,
+    background: on ? "#1E7D5C" : "#F4F6F7", color: on ? "#FFFFFF" : "#607D8B", border: on ? "none" : "1.5px solid #B2CEBF",
+  });
 
   return (
     <Overlay onClose={onClose}>
@@ -260,7 +274,13 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
           <input style={inputStyle} value={dose} onChange={e => setDose(e.target.value)} placeholder="1 comprimé" />
         </div>
         <div>
-          <div style={labelStyle}>Horaires de prise</div>
+          <div style={labelStyle}>Fréquence</div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {(["jour", "semaine", "mois"] as const).map(u => (
+              <button key={u} onClick={() => setFrequencyUnit(u)} style={chipStyle(frequencyUnit === u)}>par {u}</button>
+            ))}
+          </div>
+          <div style={labelStyle}>Horaires de prise · {times.length} fois par {frequencyUnit}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {times.map((t, i) => (
               <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -281,8 +301,29 @@ export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medica
           </div>
         </div>
         <div>
+          <div style={labelStyle}>Durée du traitement</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setLifelong(false)} style={chipStyle(!lifelong)}>Durée limitée</button>
+            <button onClick={() => setLifelong(true)} style={chipStyle(lifelong)}>À vie</button>
+          </div>
+          {!lifelong && (
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <input style={{ ...inputStyle, flex: 1 }} value={durationValue} onChange={e => setDurationValue(e.target.value.replace(/\D/g, ""))} placeholder="Ex. 6" inputMode="numeric" />
+              <select style={{ ...inputStyle, flex: 1 }} value={durationUnit} onChange={e => setDurationUnit(e.target.value as "jours" | "semaines" | "mois")}>
+                <option value="jours">jours</option>
+                <option value="semaines">semaines</option>
+                <option value="mois">mois</option>
+              </select>
+            </div>
+          )}
+        </div>
+        <div>
           <div style={labelStyle}>Catégorie</div>
           <input style={inputStyle} value={category} onChange={e => setCategory(e.target.value)} placeholder="Ex. Antihypertenseur" />
+        </div>
+        <div>
+          <div style={labelStyle}>Consignes (optionnel)</div>
+          <input style={inputStyle} value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="Ex. À prendre pendant le repas" />
         </div>
         <div>
           <div style={labelStyle}>Couleur</div>
@@ -331,7 +372,8 @@ function MedDetailSheetLive({ med, onClose, onToggle, onEdit, onDelete }: {
       <div style={{ marginTop: 20 }}>
         {[
           ["Dosage", med.dose],
-          ["Fréquence", `${med.times.length} fois par jour`],
+          ["Fréquence", frequencyLabel(med)],
+          ["Durée", durationLabel(med)],
           ["Depuis", med.since ?? "—"],
           ["Prescripteur", med.prescriber ?? "—"],
         ].map(([label, val]) => (
@@ -341,6 +383,12 @@ function MedDetailSheetLive({ med, onClose, onToggle, onEdit, onDelete }: {
           </div>
         ))}
       </div>
+      {med.instructions && (
+        <div style={{ marginTop: 14, background: "#D6EFE6", borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 12, color: "#1E7D5C", fontWeight: 700, marginBottom: 4 }}>CONSIGNES DU MÉDECIN</div>
+          <div style={{ fontSize: 13, color: "#1A2E3B", lineHeight: 1.5 }}>{med.instructions}</div>
+        </div>
+      )}
       <div style={{ marginTop: 16 }}>
         <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>RAPPELS PROGRAMMÉS</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
