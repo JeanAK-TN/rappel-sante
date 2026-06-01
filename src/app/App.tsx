@@ -6,7 +6,7 @@ import Gallery from "./Gallery";
 import Landing from "./Landing";
 import {
   SplashScreen, OnboardingSlide1, OnboardingSlide2, OnboardingSlide3,
-  InscriptionScreen, OTPScreen, ProfilMedicalScreen, LoginScreen
+  InscriptionScreen, OTPScreen, ProfilMedicalScreen, LoginScreen, MedecinLoginScreen
 } from "./components/screens/OnboardingScreens";
 import { DashboardScreen } from "./components/screens/DashboardScreen";
 import { MedicationsScreen } from "./components/screens/MedicationsScreen";
@@ -46,6 +46,7 @@ export default function App() {
         <Route path="/onboarding/3" element={<Phone><OnboardingSlide3 /></Phone>} />
         <Route path="/register" element={<Phone><InscriptionScreen /></Phone>} />
         <Route path="/login" element={<Phone><LoginScreen /></Phone>} />
+        <Route path="/medecin-login" element={<Phone><MedecinLoginScreen /></Phone>} />
         <Route path="/otp" element={<Phone><OTPScreen /></Phone>} />
         <Route path="/setup-profile" element={<Phone><ProfilMedicalScreen /></Phone>} />
 

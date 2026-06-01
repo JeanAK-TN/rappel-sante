@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import { Eye, EyeOff, Phone, Lock, User, ChevronLeft, Stethoscope } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
+import { useToast } from "../../ui/toast";
 
 // Splash Screen
 export function SplashScreen() {
@@ -400,16 +401,35 @@ export function ProfilMedicalScreen() {
   );
 }
 
-// Connexion : choisir un compte enregistré sur l'appareil
+// Connexion : par numéro de téléphone (le patient ne voit pas les autres comptes)
 export function LoginScreen() {
   const navigate = useNavigate();
   const store = useStore();
-  const users = store.usersList();
+  const toast = useToast();
+  const [phone, setPhone] = useState("");
 
-  function connect(id: string) {
-    store.switchUser(id);
-    navigate("/home");
+  function login() {
+    const entered = phone.replace(/\D/g, "");
+    if (entered.length < 8) {
+      toast.show("Entrez votre numéro de téléphone", "info");
+      return;
+    }
+    const match = store.usersList().find(u => {
+      const s = u.phone.replace(/\D/g, "");
+      return s.length >= 8 && (s === entered || s.endsWith(entered) || entered.endsWith(s));
+    });
+    if (match) {
+      store.switchUser(match.id);
+      navigate("/home");
+    } else {
+      toast.show("Aucun compte trouvé avec ce numéro", "info");
+    }
   }
+
+  const inputBox: React.CSSProperties = {
+    height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF",
+    display: "flex", alignItems: "center", paddingInline: 16, gap: 12,
+  };
 
   return (
     <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
@@ -421,50 +441,106 @@ export function LoginScreen() {
       </div>
       <div style={{ padding: "8px 24px 0" }}>
         <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Se connecter</div>
-        <div style={{ fontSize: 14, color: "#607D8B", marginTop: 4 }}>Choisissez votre compte.</div>
+        <div style={{ fontSize: 14, color: "#607D8B", marginTop: 4 }}>Entrez le numéro de téléphone de votre compte.</div>
       </div>
-      <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", gap: 12, overflowY: "auto", flex: 1 }}>
-        {users.length === 0 && (
-          <div style={{ fontSize: 14, color: "#607D8B", textAlign: "center", marginTop: 40 }}>
-            Aucun compte enregistré sur cet appareil.
+
+      <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", flex: 1 }}>
+        <div>
+          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Numéro de téléphone</div>
+          <div style={inputBox}>
+            <Phone size={18} color="#607D8B" />
+            <span style={{ fontSize: 15, color: "#607D8B" }}>+228</span>
+            <input
+              style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: "#1A2E3B" }}
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              placeholder="XX XX XX XX"
+              inputMode="tel"
+              autoFocus
+              onKeyDown={e => { if (e.key === "Enter") login(); }}
+            />
           </div>
-        )}
-        {users.map(u => {
-          const initials = `${u.firstName[0] ?? ""}${u.lastName[0] ?? ""}`.toUpperCase() || "?";
-          return (
-            <button key={u.id} onClick={() => connect(u.id)} style={{
-              background: "#F4F6F7", border: "1.5px solid #B2CEBF", borderRadius: 12, padding: "14px 16px",
-              display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left",
-            }}>
-              <div style={{ width: 44, height: 44, background: "#1E7D5C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF" }}>{initials}</span>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#1A2E3B" }}>{u.firstName || "Utilisateur"} {u.lastName}</div>
-                <div style={{ fontSize: 13, color: "#607D8B" }}>{u.phone || "—"}</div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ position: "absolute", bottom: 32, left: 24, right: 24 }}>
+        </div>
+
         <button
-          onClick={() => navigate("/register")}
-          style={{ width: "100%", height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
+          onClick={login}
+          style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
         >
-          Créer un nouveau compte
+          Se connecter
         </button>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
+
+        <div style={{ textAlign: "center", fontSize: 14, color: "#607D8B" }}>
+          Pas encore de compte ?{" "}
+          <span onClick={() => navigate("/register")} style={{ color: "#1E7D5C", fontWeight: 600, cursor: "pointer" }}>Créer un compte</span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
           <div style={{ flex: 1, height: 1, background: "#E0E0E0" }} />
           <span style={{ fontSize: 12, color: "#B2CEBF" }}>ou</span>
           <div style={{ flex: 1, height: 1, background: "#E0E0E0" }} />
         </div>
+
         <button
-          onClick={() => navigate("/medecin")}
-          style={{ width: "100%", height: 48, background: "#145C40", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          onClick={() => navigate("/medecin-login")}
+          style={{ width: "100%", height: 48, background: "transparent", border: "2px solid #145C40", borderRadius: 12, color: "#145C40", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
         >
-          <Stethoscope size={18} color="#FFFFFF" /> Espace médecin
+          <Stethoscope size={18} color="#145C40" /> Espace médecin
         </button>
+      </div>
+    </div>
+  );
+}
+
+// Connexion médecin : code d'accès professionnel
+const DEMO_CODE_MEDECIN = "MEDECIN2026";
+
+export function MedecinLoginScreen() {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [code, setCode] = useState("");
+
+  function login() {
+    if (code.trim().toUpperCase() === DEMO_CODE_MEDECIN) navigate("/medecin");
+    else toast.show("Code d'accès incorrect", "info");
+  }
+
+  return (
+    <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
+      <div style={{ background: "#145C40" }}>
+        <StatusBar dark />
+        <div style={{ padding: "8px 16px 24px" }}>
+          <button onClick={() => navigate("/login")} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: "6px 4px", color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: 500 }}>
+            <ChevronLeft size={20} color="rgba(255,255,255,0.85)" /> Retour
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+            <Stethoscope size={26} color="#FFFFFF" />
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#FFFFFF" }}>Espace médecin</div>
+          </div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", marginTop: 6 }}>Réservé aux professionnels de santé.</div>
+        </div>
+      </div>
+
+      <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
+        <div>
+          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Code d'accès</div>
+          <input
+            style={{ width: "100%", height: 56, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF", paddingInline: 16, fontSize: 16, color: "#1A2E3B", outline: "none", boxSizing: "border-box", letterSpacing: 2 }}
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            placeholder="Votre code professionnel"
+            autoFocus
+            onKeyDown={e => { if (e.key === "Enter") login(); }}
+          />
+        </div>
+        <button
+          onClick={login}
+          style={{ width: "100%", height: 52, background: "#145C40", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
+        >
+          Accéder
+        </button>
+        <div style={{ background: "#D6EFE6", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#1E7D5C" }}>
+          Démo : code d'accès <strong>{DEMO_CODE_MEDECIN}</strong>
+        </div>
       </div>
     </div>
   );
