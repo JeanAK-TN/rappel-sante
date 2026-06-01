@@ -143,7 +143,8 @@ export default function Gallery() {
             <div style={{ display: "flex", gap: 20, width: "max-content" }}>
               {flow.screens.map((screen, si) => (
                 <ScreenFrame key={si} label={screen.label} scale={SCALE}>
-                  {screen.component}
+                  {/* Aperçu non interactif : la galerie est une vitrine */}
+                  <div style={{ pointerEvents: "none", userSelect: "none" }}>{screen.component}</div>
                 </ScreenFrame>
               ))}
             </div>

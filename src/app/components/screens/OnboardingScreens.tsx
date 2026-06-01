@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { Eye, EyeOff, Phone, Lock, User, Search, ChevronLeft } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
@@ -7,11 +7,14 @@ import { useStore } from "../../store/AppStore";
 // Splash Screen
 export function SplashScreen() {
   const navigate = useNavigate();
-  // Avance automatiquement vers l'onboarding après un court instant.
+  const location = useLocation();
+  // Avance automatiquement vers l'onboarding, mais seulement quand on est
+  // réellement sur l'écran de démarrage (pas dans la galerie qui l'affiche aussi).
   useEffect(() => {
+    if (location.pathname !== "/welcome") return;
     const t = setTimeout(() => navigate("/onboarding/1"), 1800);
     return () => clearTimeout(t);
-  }, [navigate]);
+  }, [navigate, location.pathname]);
   return (
     <div
       onClick={() => navigate("/onboarding/1")}
