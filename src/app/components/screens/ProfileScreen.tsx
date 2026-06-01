@@ -1,8 +1,9 @@
-import { Settings, ChevronRight, Globe, Bell, Wifi, LogOut, HelpCircle, Info, Share2 } from "lucide-react";
+import { Settings, ChevronRight, Globe, Bell, Wifi, LogOut, HelpCircle, Info, Share2, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
 import { useStore } from "../../store/AppStore";
+import { useToast } from "../../ui/toast";
 
 const menuItems = [
   { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#607D8B" strokeWidth="1.8" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#607D8B" strokeWidth="1.8" strokeLinecap="round" /></svg>, label: "Mes informations personnelles" },
@@ -18,6 +19,7 @@ const menuItems = [
 
 export function ProfileScreen() {
   const store = useStore();
+  const toast = useToast();
   const navigate = useNavigate();
   const { profile } = store.state;
   const initials = `${profile.firstName[0] ?? ""}${profile.lastName[0] ?? ""}`.toUpperCase();
@@ -83,6 +85,20 @@ export function ProfileScreen() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Réinitialiser la démo */}
+        <div style={{ marginInline: 20, marginBottom: 12 }}>
+          <div
+            onClick={() => { store.resetAll(); toast.show("Démo réinitialisée 🔄", "info"); navigate("/"); }}
+            style={{ background: "#FFFFFF", borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, boxShadow: "0px 2px 12px rgba(0,0,0,0.06)", cursor: "pointer" }}
+          >
+            <RotateCcw size={18} color="#607D8B" />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, color: "#1A2E3B", fontWeight: 500 }}>Réinitialiser la démo</div>
+              <div style={{ fontSize: 12, color: "#607D8B" }}>Restaure les données d'exemple</div>
+            </div>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ToastViewport } from "../ui/toast";
 
 /**
  * Affiche un écran applicatif (toujours dessiné en 390x844) dans un cadre
@@ -54,6 +55,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
           }}
         >
           {children}
+          <ToastViewport />
         </div>
       </div>
     </div>

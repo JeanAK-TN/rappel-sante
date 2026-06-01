@@ -19,11 +19,14 @@ interface StoreApi {
   state: AppState;
   // Médicaments
   addMedication(input: Omit<Medication, "id">): void;
+  updateMedication(id: string, patch: Partial<Omit<Medication, "id">>): void;
+  removeMedication(id: string): void;
   toggleIntake(medId: string, time: string): void;
   isTaken(medId: string, time: string): boolean;
   takenCountToday(): { done: number; total: number };
   // Mesures
   addMeasurement(input: Omit<Measurement, "id">): Measurement;
+  removeMeasurement(id: string): void;
   measurementsOf(type: Measurement["type"]): Measurement[];
   // Profil
   updateProfile(patch: Partial<Profile>): void;
@@ -53,6 +56,14 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       setState(s => ({ ...s, medications: [...s.medications, med] }));
     },
 
+    updateMedication(id, patch) {
+      setState(s => ({ ...s, medications: s.medications.map(m => m.id === id ? { ...m, ...patch } : m) }));
+    },
+
+    removeMedication(id) {
+      setState(s => ({ ...s, medications: s.medications.filter(m => m.id !== id) }));
+    },
+
     toggleIntake(medId, time) {
       const key = dateKey();
       const tag = `${medId}@${time}`;
@@ -78,6 +89,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       const m: Measurement = { ...input, id: `m-${Date.now()}` };
       setState(s => ({ ...s, measurements: [...s.measurements, m] }));
       return m;
+    },
+
+    removeMeasurement(id) {
+      setState(s => ({ ...s, measurements: s.measurements.filter(m => m.id !== id) }));
     },
 
     measurementsOf(type) {

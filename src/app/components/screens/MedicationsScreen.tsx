@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Plus, Check, Clock, X } from "lucide-react";
+import { Plus, Check, Clock, X, Pencil, Trash2 } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
 import { useStore } from "../../store/AppStore";
+import { useToast } from "../../ui/toast";
 import { dayCompletion } from "../../store/health";
 import type { Medication } from "../../store/types";
 
@@ -15,9 +16,17 @@ function toMinutes(hhmm: string): number {
 
 export function MedicationsScreen() {
   const store = useStore();
+  const toast = useToast();
   const { medications } = store.state;
   const [addOpen, setAddOpen] = useState(false);
+  const [editMed, setEditMed] = useState<Medication | null>(null);
   const [detail, setDetail] = useState<Medication | null>(null);
+
+  function toggleWithToast(medId: string, time: string) {
+    const wasTaken = store.isTaken(medId, time);
+    store.toggleIntake(medId, time);
+    toast.show(wasTaken ? "Prise annulée" : "Bravo, prise enregistrée 👍", wasTaken ? "info" : "success");
+  }
 
   const { done, total } = store.takenCountToday();
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -110,7 +119,7 @@ export function MedicationsScreen() {
                   )}
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); store.toggleIntake(med.id, time); }}
+                  onClick={(e) => { e.stopPropagation(); toggleWithToast(med.id, time); }}
                   title={taken ? "Annuler la prise" : "Marquer comme pris"}
                   style={{
                     width: 36, height: 36, borderRadius: "50%", cursor: "pointer", padding: 0,
@@ -150,8 +159,28 @@ export function MedicationsScreen() {
 
       <BottomNav active={1} />
 
-      {addOpen && <AddMedicationSheet onClose={() => setAddOpen(false)} onSave={(m) => { store.addMedication(m); setAddOpen(false); }} />}
-      {detail && <MedDetailSheetLive med={detail} onClose={() => setDetail(null)} />}
+      {addOpen && (
+        <MedicationSheet
+          onClose={() => setAddOpen(false)}
+          onSave={(m) => { store.addMedication(m); setAddOpen(false); toast.show("Médicament ajouté ✅"); }}
+        />
+      )}
+      {editMed && (
+        <MedicationSheet
+          initial={editMed}
+          onClose={() => setEditMed(null)}
+          onSave={(m) => { store.updateMedication(editMed.id, m); setEditMed(null); toast.show("Médicament modifié ✅"); }}
+        />
+      )}
+      {detail && (
+        <MedDetailSheetLive
+          med={detail}
+          onClose={() => setDetail(null)}
+          onToggle={toggleWithToast}
+          onEdit={(m) => { setDetail(null); setEditMed(m); }}
+          onDelete={(m) => { setDetail(null); store.removeMedication(m.id); toast.show("Médicament supprimé", "info"); }}
+        />
+      )}
     </div>
   );
 }
@@ -183,18 +212,22 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 
 const COLORS = ["#1E7D5C", "#2196F3", "#FF9800", "#43A047", "#E53935"];
 
-function AddMedicationSheet({ onClose, onSave }: { onClose: () => void; onSave: (m: Omit<Medication, "id">) => void }) {
-  const [name, setName] = useState("");
-  const [dose, setDose] = useState("1 comprimé");
-  const [category, setCategory] = useState("");
-  const [time, setTime] = useState("08:00");
-  const [color, setColor] = useState(COLORS[0]);
+function MedicationSheet({ initial, onClose, onSave }: { initial?: Medication; onClose: () => void; onSave: (m: Omit<Medication, "id">) => void }) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [dose, setDose] = useState(initial?.dose ?? "1 comprimé");
+  const [category, setCategory] = useState(initial?.category ?? "");
+  const [time, setTime] = useState(initial?.times[0] ?? "08:00");
+  const [color, setColor] = useState(initial?.color ?? COLORS[0]);
 
   const canSave = name.trim().length > 0;
 
   function submit() {
     if (!canSave) return;
-    onSave({ name: name.trim(), dose: dose.trim() || "1 comprimé", category: category.trim() || "Médicament", color, times: [time] });
+    onSave({
+      name: name.trim(), dose: dose.trim() || "1 comprimé",
+      category: category.trim() || "Médicament", color, times: [time],
+      prescriber: initial?.prescriber, since: initial?.since, notice: initial?.notice,
+    });
   }
 
   const inputStyle: React.CSSProperties = {
@@ -206,7 +239,7 @@ function AddMedicationSheet({ onClose, onSave }: { onClose: () => void; onSave: 
   return (
     <Overlay onClose={onClose}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#1A2E3B" }}>Ajouter un médicament</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#1A2E3B" }}>{initial ? "Modifier le médicament" : "Ajouter un médicament"}</div>
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} color="#607D8B" /></button>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -251,8 +284,14 @@ function AddMedicationSheet({ onClose, onSave }: { onClose: () => void; onSave: 
   );
 }
 
-function MedDetailSheetLive({ med, onClose }: { med: Medication; onClose: () => void }) {
+function MedDetailSheetLive({ med, onClose, onToggle, onEdit, onDelete }: {
+  med: Medication; onClose: () => void;
+  onToggle: (medId: string, time: string) => void;
+  onEdit: (m: Medication) => void;
+  onDelete: (m: Medication) => void;
+}) {
   const store = useStore();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const firstTime = med.times[0];
   const taken = store.isTaken(med.id, firstTime);
   return (
@@ -296,16 +335,36 @@ function MedDetailSheetLive({ med, onClose }: { med: Medication; onClose: () => 
         </div>
       )}
       <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-        <button onClick={onClose} style={{ flex: 1, height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
-          Fermer
+        <button
+          onClick={() => onEdit(med)}
+          style={{ flex: 1, height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+        >
+          <Pencil size={16} color="#1E7D5C" /> Modifier
         </button>
         <button
-          onClick={() => { store.toggleIntake(med.id, firstTime); onClose(); }}
+          onClick={() => { onToggle(med.id, firstTime); onClose(); }}
           style={{ flex: 1, height: 52, background: taken ? "#607D8B" : "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer" }}
         >
           {taken ? "Annuler la prise" : "Marquer pris"}
         </button>
       </div>
+
+      {confirmDelete ? (
+        <div style={{ marginTop: 12, background: "#FFEBEE", borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 13, color: "#1A2E3B", marginBottom: 10 }}>Supprimer définitivement « {med.name} » ?</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={() => setConfirmDelete(false)} style={{ flex: 1, height: 44, background: "transparent", border: "1.5px solid #B2CEBF", borderRadius: 10, color: "#607D8B", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Annuler</button>
+            <button onClick={() => onDelete(med)} style={{ flex: 1, height: 44, background: "#E53935", border: "none", borderRadius: 10, color: "#FFFFFF", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Supprimer</button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirmDelete(true)}
+          style={{ width: "100%", height: 44, marginTop: 12, background: "transparent", border: "none", color: "#E53935", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+        >
+          <Trash2 size={16} color="#E53935" /> Supprimer le médicament
+        </button>
+      )}
     </Overlay>
   );
 }

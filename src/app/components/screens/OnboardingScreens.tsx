@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Eye, EyeOff, Phone, Lock, User, Search } from "lucide-react";
 import { StatusBar } from "../StatusBar";
@@ -194,6 +194,22 @@ export function InscriptionScreen() {
 // OTP Screen
 export function OTPScreen() {
   const navigate = useNavigate();
+  const store = useStore();
+  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const phone = store.state.profile.phone || "+228 90 23 45 67";
+  const complete = digits.every(d => d !== "");
+
+  function setDigit(i: number, v: string) {
+    const d = v.replace(/\D/g, "").slice(-1); // garde le dernier chiffre saisi
+    setDigits(cur => cur.map((x, j) => (j === i ? d : x)));
+    if (d && i < 5) refs.current[i + 1]?.focus();
+  }
+
+  function onKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && !digits[i] && i > 0) refs.current[i - 1]?.focus();
+  }
+
   return (
     <div style={{ width: 390, height: 844, background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
       <StatusBar />
@@ -201,26 +217,34 @@ export function OTPScreen() {
         <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Vérification</div>
         <div style={{ fontSize: 14, color: "#607D8B", marginTop: 8, lineHeight: 1.5 }}>
           Un code à 6 chiffres a été envoyé au<br />
-          <span style={{ color: "#1E7D5C", fontWeight: 600 }}>+228 90 23 45 67</span>
+          <span style={{ color: "#1E7D5C", fontWeight: 600 }}>{phone}</span>
         </div>
       </div>
       {/* OTP boxes */}
       <div style={{ padding: "48px 24px 0", display: "flex", justifyContent: "center", gap: 10 }}>
-        {["3", "7", "8", "", "", ""].map((digit, i) => (
-          <div key={i} style={{
-            width: 48, height: 56, background: "#F4F6F7", borderRadius: 8,
-            border: `2px solid ${i < 3 ? "#1E7D5C" : i === 3 ? "#1E7D5C" : "#B2CEBF"}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 24, fontWeight: 700, color: "#1A2E3B",
-          }}>
-            {digit}
-          </div>
+        {digits.map((digit, i) => (
+          <input
+            key={i}
+            ref={el => { refs.current[i] = el; }}
+            value={digit}
+            onChange={e => setDigit(i, e.target.value)}
+            onKeyDown={e => onKeyDown(i, e)}
+            inputMode="numeric"
+            maxLength={1}
+            autoFocus={i === 0}
+            style={{
+              width: 48, height: 56, background: "#F4F6F7", borderRadius: 8,
+              border: `2px solid ${digit ? "#1E7D5C" : "#B2CEBF"}`,
+              textAlign: "center", fontSize: 24, fontWeight: 700, color: "#1A2E3B", outline: "none",
+            }}
+          />
         ))}
       </div>
       <div style={{ padding: "32px 24px 0" }}>
         <button
-          onClick={() => navigate("/setup-profile")}
-          style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
+          onClick={() => complete && navigate("/setup-profile")}
+          disabled={!complete}
+          style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, cursor: complete ? "pointer" : "not-allowed", opacity: complete ? 1 : 0.4 }}
         >
           Confirmer
         </button>

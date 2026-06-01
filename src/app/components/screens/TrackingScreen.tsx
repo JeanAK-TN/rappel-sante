@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Download, Plus, X, AlertTriangle, Phone } from "lucide-react";
+import { Download, Plus, X, AlertTriangle, Phone, Trash2, LineChart } from "lucide-react";
 import { CartesianGrid, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
 import { useStore } from "../../store/AppStore";
+import { useToast } from "../../ui/toast";
 import { MEASURE_META, STATUS_COLOR, statusOf, isCritical, formatValue, relativeLabel, minAvgMax } from "../../store/health";
 import type { MeasureType, Measurement } from "../../store/types";
 
@@ -23,6 +24,7 @@ const DAY = 86400000;
 
 export function TrackingScreen() {
   const store = useStore();
+  const toast = useToast();
   const [type, setType] = useState<MeasureType>("glycemie");
   const [periodIdx, setPeriodIdx] = useState(0);
   const [entryOpen, setEntryOpen] = useState(false);
@@ -48,7 +50,13 @@ export function TrackingScreen() {
 
   function onSaved(m: Measurement) {
     setEntryOpen(false);
+    toast.show("Mesure enregistrée 👍");
     if (isCritical(m.type, m.value)) setCritical(m);
+  }
+
+  function deleteMeasure(id: string) {
+    store.removeMeasurement(id);
+    toast.show("Mesure supprimée", "info");
   }
 
   return (
@@ -94,9 +102,18 @@ export function TrackingScreen() {
               )}
             </>
           ) : (
-            <div style={{ fontSize: 14, color: "#607D8B" }}>Aucune mesure. Appuyez sur + pour commencer.</div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "16px 0", gap: 10 }}>
+              <div style={{ width: 64, height: 64, background: "#D6EFE6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <LineChart size={28} color="#1E7D5C" />
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2E3B" }}>Aucune mesure pour le moment</div>
+              <div style={{ fontSize: 13, color: "#607D8B", lineHeight: 1.5 }}>
+                Appuyez sur le bouton + pour enregistrer votre première {meta.label.toLowerCase()}.
+              </div>
+            </div>
           )}
 
+          {latest && (<>
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
             {PERIODS.map((p, i) => (
               <button
@@ -141,8 +158,10 @@ export function TrackingScreen() {
               </div>
             ))}
           </div>
+          </>)}
         </div>
 
+        {all.length > 0 && (
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>DERNIÈRES MESURES</div>
           {[...all].reverse().slice(0, 6).map(m => {
@@ -153,15 +172,18 @@ export function TrackingScreen() {
                   <div style={{ fontSize: 13, color: "#607D8B" }}>{relativeLabel(m.at)}</div>
                   {m.context && <div style={{ fontSize: 12, color: "#B2CEBF", marginTop: 2 }}>{m.context}</div>}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <span style={{ fontSize: 16, fontWeight: 700, color: c }}>{formatValue(m)} {meta.unit}</span>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />
+                  <button onClick={() => deleteMeasure(m.id)} title="Supprimer" style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}>
+                    <Trash2 size={16} color="#B2CEBF" />
+                  </button>
                 </div>
               </div>
             );
           })}
-          {all.length === 0 && <div style={{ fontSize: 13, color: "#B2CEBF" }}>Aucune mesure enregistrée.</div>}
         </div>
+        )}
       </div>
 
       <button
