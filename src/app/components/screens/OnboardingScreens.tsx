@@ -256,7 +256,7 @@ export function OTPScreen() {
 }
 
 // Profil Médical Setup
-const PATHOLOGIES = ["Hypertension", "Diabète", "Insuff. cardiaque", "Asthme", "Autre"];
+const PATHOLOGIES = ["Hypertension", "Diabète", "Autre"];
 
 export function ProfilMedicalScreen() {
   const navigate = useNavigate();

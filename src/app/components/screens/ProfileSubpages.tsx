@@ -5,7 +5,7 @@ import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
 
-const PATHOLOGIES = ["Hypertension", "Diabète", "Insuff. cardiaque", "Asthme", "Autre"];
+const PATHOLOGIES = ["Hypertension", "Diabète", "Autre"];
 const LANGUAGES = ["Français", "Éwé", "Kabiyè"];
 
 /** Gabarit commun : en-tête avec retour + contenu défilant + bouton bas optionnel. */
@@ -70,12 +70,13 @@ export function PathologiesScreen() {
   const toast = useToast();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string[]>(store.state.profile.pathologies);
+  const [diseaseDetail, setDiseaseDetail] = useState(store.state.profile.diseaseDetail ?? "");
 
   function toggle(p: string) {
     setSelected(cur => cur.includes(p) ? cur.filter(x => x !== p) : [...cur, p]);
   }
   function save() {
-    store.updateProfile({ pathologies: selected });
+    store.updateProfile({ pathologies: selected, diseaseDetail: diseaseDetail.trim() || undefined });
     toast.show("Pathologies mises à jour ✅");
     navigate("/profile");
   }
@@ -93,6 +94,10 @@ export function PathologiesScreen() {
             }}>{p}</button>
           );
         })}
+      </div>
+      <div>
+        <div style={label}>Préciser une autre maladie</div>
+        <input style={field} value={diseaseDetail} onChange={e => setDiseaseDetail(e.target.value)} placeholder="Ex. Insuffisance rénale chronique" />
       </div>
     </SubPage>
   );
