@@ -139,7 +139,7 @@ export function DashboardScreen() {
             {[
               { icon: <PenLine size={22} color="#1E7D5C" />, label: "Saisir valeur", to: "/tracking" },
               { icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="8" y="3" width="8" height="18" rx="4" fill="#1E7D5C" /><rect x="3" y="8" width="18" height="8" rx="4" fill="#1E7D5C" opacity="0.4" /></svg>, label: "Médicament", to: "/medications" },
-              { icon: <Stethoscope size={22} color="#1E7D5C" />, label: "Médecin", to: "/medecin" },
+              { icon: <Stethoscope size={22} color="#1E7D5C" />, label: "Mon médecin", to: "/profile/doctor" },
             ].map((item, i) => (
               <div key={i} onClick={() => navigate(item.to)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <div style={{ width: 64, height: 64, background: "#FFFFFF", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0px 2px 12px rgba(0,0,0,0.08)" }}>
