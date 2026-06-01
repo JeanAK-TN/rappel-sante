@@ -256,7 +256,7 @@ export function OTPScreen() {
 }
 
 // Profil Médical Setup
-const PATHOLOGIES = ["Hypertension", "Diabète", "Autre"];
+const PATHOLOGIES = ["Hypertension", "Diabète", "VIH", "Tuberculose", "Autre"];
 
 export function ProfilMedicalScreen() {
   const navigate = useNavigate();
@@ -348,7 +348,9 @@ export function ProfilMedicalScreen() {
               );
             })}
           </div>
-          <input style={{ ...docInput, marginTop: 12 }} value={diseaseDetail} onChange={e => setDiseaseDetail(e.target.value)} placeholder="Précisez la maladie (ex. Diabète de type 2)" />
+          {selected.includes("Autre") && (
+            <input style={{ ...docInput, marginTop: 12 }} value={diseaseDetail} onChange={e => setDiseaseDetail(e.target.value)} placeholder="Précisez la maladie" />
+          )}
         </div>
         <div>
           <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>Votre médecin traitant</div>

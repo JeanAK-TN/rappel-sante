@@ -5,7 +5,7 @@ import { StatusBar } from "../StatusBar";
 import { useStore } from "../../store/AppStore";
 import { useToast } from "../../ui/toast";
 
-const PATHOLOGIES = ["Hypertension", "Diabète", "Autre"];
+const PATHOLOGIES = ["Hypertension", "Diabète", "VIH", "Tuberculose", "Autre"];
 const LANGUAGES = ["Français", "Éwé", "Kabiyè"];
 
 /** Gabarit commun : en-tête avec retour + contenu défilant + bouton bas optionnel. */
@@ -95,10 +95,12 @@ export function PathologiesScreen() {
           );
         })}
       </div>
-      <div>
-        <div style={label}>Préciser une autre maladie</div>
-        <input style={field} value={diseaseDetail} onChange={e => setDiseaseDetail(e.target.value)} placeholder="Ex. Insuffisance rénale chronique" />
-      </div>
+      {selected.includes("Autre") && (
+        <div>
+          <div style={label}>Préciser une autre maladie</div>
+          <input style={field} value={diseaseDetail} onChange={e => setDiseaseDetail(e.target.value)} placeholder="Ex. Insuffisance rénale chronique" />
+        </div>
+      )}
     </SubPage>
   );
 }
