@@ -1,116 +1,344 @@
-import { Plus, Check, Clock, X, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { Plus, Check, Clock, X } from "lucide-react";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
-
-const meds = [
-  { name: "Amlodipine 5mg", time: "08:00", dose: "1 comprimé", status: "confirmed" as const, color: "#43A047" },
-  { name: "Metformine 500mg", time: "12:00", dose: "1 comprimé", status: "upcoming" as const, color: "#FF9800" },
-  { name: "Losartan 50mg", time: "20:00", dose: "1 comprimé", status: "scheduled" as const, color: "#607D8B" },
-];
+import { useStore } from "../../store/AppStore";
+import { dateKey } from "../../store/health";
+import type { Medication } from "../../store/types";
 
 const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const dayStatus = ["normal", "normal", "warning", "critical", "normal", "grey", "grey"];
+
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
 
 export function MedicationsScreen() {
+  const store = useStore();
+  const { medications } = store.state;
+  const [addOpen, setAddOpen] = useState(false);
+  const [detail, setDetail] = useState<Medication | null>(null);
+
+  const { done, total } = store.takenCountToday();
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  // Une ligne par (médicament, horaire).
+  const rows = medications.flatMap(med =>
+    med.times.map(time => ({ med, time, taken: store.isTaken(med.id, time) }))
+  );
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const untaken = rows.filter(r => !r.taken);
+  const futureUntaken = untaken.filter(r => toMinutes(r.time) >= nowMin);
+  const pool = futureUntaken.length ? futureUntaken : untaken;
+  const soonest = pool.length
+    ? pool.reduce((a, b) => (toMinutes(a.time) <= toMinutes(b.time) ? a : b))
+    : null;
+
+  function countdown(time: string): string {
+    const diff = toMinutes(time) - nowMin;
+    if (diff < 0) return "En retard";
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    return h > 0 ? `Dans ${h}h ${m}min` : `Dans ${m}min`;
+  }
+
+  // Pastilles de la semaine : vert si toutes prises, orange si partiel, gris sinon.
+  const todayKey = dateKey();
+  const todayCount = (store.state.intakeLog[todayKey] ?? []).length;
+  const todayDow = (new Date().getDay() + 6) % 7; // 0 = lundi
+  const baseDate = new Date().getDate();
+
   return (
     <div style={{ width: 390, height: 844, background: "#F4F6F7", display: "flex", flexDirection: "column", position: "relative" }}>
       <div style={{ background: "#FFFFFF" }}>
         <StatusBar />
         <div style={{ padding: "8px 20px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#1A2E3B" }}>Mes Médicaments</div>
-          <div style={{ width: 36, height: 36, background: "#1E7D5C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <button
+            onClick={() => setAddOpen(true)}
+            style={{ width: 36, height: 36, background: "#1E7D5C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+          >
             <Plus size={20} color="#FFFFFF" />
-          </div>
+          </button>
         </div>
-        {/* Progress */}
-        <div style={{ padding: "0 20px 16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: "#607D8B" }}>Prises effectuées aujourd'hui</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#1E7D5C" }}>1/3</span>
-          </div>
-          <div style={{ height: 8, background: "#D6EFE6", borderRadius: 4 }}>
-            <div style={{ height: 8, width: "33%", background: "#1E7D5C", borderRadius: 4 }} />
-          </div>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 90px", display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>AUJOURD'HUI</div>
-
-        {meds.map((med, i) => (
-          <div key={i} style={{
-            background: "#FFFFFF", borderRadius: 16, padding: 16,
-            boxShadow: "0px 2px 12px rgba(0,0,0,0.08)",
-            display: "flex", alignItems: "center", gap: 0,
-            borderLeft: `4px solid ${med.color}`,
-          }}>
-            <div style={{ flex: 1, marginLeft: 12 }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "#1A2E3B" }}>{med.name}</div>
-              <div style={{ fontSize: 13, color: "#607D8B", marginTop: 2 }}>{med.dose} · {med.time}</div>
-              {med.status === "upcoming" && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                  <Clock size={12} color="#FF9800" />
-                  <span style={{ fontSize: 11, color: "#FF9800", fontWeight: 500 }}>Dans 1h 23min</span>
-                </div>
-              )}
+        {medications.length > 0 && (
+          <div style={{ padding: "0 20px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 13, color: "#607D8B" }}>Prises effectuées aujourd'hui</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#1E7D5C" }}>{done}/{total}</span>
             </div>
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: med.status === "confirmed" ? "#43A047" : med.status === "upcoming" ? "#FFF3E0" : "#F4F6F7",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: med.status === "upcoming" ? "2px solid #FF9800" : "none",
-            }}>
-              {med.status === "confirmed" ? <Check size={18} color="#FFFFFF" /> : med.status === "upcoming" ? <Clock size={16} color="#FF9800" /> : <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #B2CEBF" }} />}
+            <div style={{ height: 8, background: "#D6EFE6", borderRadius: 4 }}>
+              <div style={{ height: 8, width: `${pct}%`, background: "#1E7D5C", borderRadius: 4, transition: "width 0.3s" }} />
             </div>
           </div>
-        ))}
+        )}
+      </div>
 
-        {/* Cette semaine */}
-        <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginTop: 8 }}>CETTE SEMAINE</div>
-        <div style={{ background: "#FFFFFF", borderRadius: 16, padding: 16, boxShadow: "0px 2px 12px rgba(0,0,0,0.08)" }}>
-          <div style={{ display: "flex", justifyContent: "space-around" }}>
-            {days.map((day, i) => {
-              const st = dayStatus[i];
-              const dot = st === "normal" ? "#43A047" : st === "warning" ? "#FF9800" : st === "critical" ? "#E53935" : "#D1D5DB";
-              return (
-                <div key={day} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, color: "#607D8B" }}>{day}</span>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: dot }} />
-                  <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? "#1E7D5C" : "#1A2E3B" }}>
-                    {[19, 20, 21, 22, 23, 24, 25][i]}
-                  </span>
+      {medications.length === 0 ? (
+        <EmptyState onAdd={() => setAddOpen(true)} />
+      ) : (
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 90px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase" }}>AUJOURD'HUI</div>
+
+          {rows.map(({ med, time, taken }) => {
+            const isSoonest = soonest && soonest.med.id === med.id && soonest.time === time;
+            const status = taken ? "confirmed" : isSoonest ? "upcoming" : "scheduled";
+            return (
+              <div
+                key={`${med.id}@${time}`}
+                onClick={() => setDetail(med)}
+                style={{
+                  background: "#FFFFFF", borderRadius: 16, padding: 16,
+                  boxShadow: "0px 2px 12px rgba(0,0,0,0.08)",
+                  display: "flex", alignItems: "center", cursor: "pointer",
+                  borderLeft: `4px solid ${med.color}`,
+                }}
+              >
+                <div style={{ flex: 1, marginLeft: 12 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: "#1A2E3B" }}>{med.name}</div>
+                  <div style={{ fontSize: 13, color: "#607D8B", marginTop: 2 }}>{med.dose} · {time}</div>
+                  {status === "upcoming" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                      <Clock size={12} color="#FF9800" />
+                      <span style={{ fontSize: 11, color: "#FF9800", fontWeight: 500 }}>{countdown(time)}</span>
+                    </div>
+                  )}
                 </div>
-              );
-            })}
+                <button
+                  onClick={(e) => { e.stopPropagation(); store.toggleIntake(med.id, time); }}
+                  title={taken ? "Annuler la prise" : "Marquer comme pris"}
+                  style={{
+                    width: 36, height: 36, borderRadius: "50%", cursor: "pointer", padding: 0,
+                    background: status === "confirmed" ? "#43A047" : status === "upcoming" ? "#FFF3E0" : "#F4F6F7",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    border: status === "upcoming" ? "2px solid #FF9800" : "none",
+                  }}
+                >
+                  {status === "confirmed" ? <Check size={18} color="#FFFFFF" /> : status === "upcoming" ? <Clock size={16} color="#FF9800" /> : <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #B2CEBF" }} />}
+                </button>
+              </div>
+            );
+          })}
+
+          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginTop: 8 }}>CETTE SEMAINE</div>
+          <div style={{ background: "#FFFFFF", borderRadius: 16, padding: 16, boxShadow: "0px 2px 12px rgba(0,0,0,0.08)" }}>
+            <div style={{ display: "flex", justifyContent: "space-around" }}>
+              {days.map((day, i) => {
+                const isToday = i === todayDow;
+                let dot = "#D1D5DB";
+                if (isToday) dot = todayCount >= total && total > 0 ? "#43A047" : todayCount > 0 ? "#FF9800" : "#D1D5DB";
+                const dayNum = baseDate - (todayDow - i);
+                return (
+                  <div key={day} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 11, color: "#607D8B" }}>{day}</span>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: dot }} />
+                    <span style={{ fontSize: 12, fontWeight: isToday ? 700 : 400, color: isToday ? "#1E7D5C" : "#1A2E3B" }}>
+                      {dayNum > 0 ? dayNum : ""}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <BottomNav active={1} />
+
+      {addOpen && <AddMedicationSheet onClose={() => setAddOpen(false)} onSave={(m) => { store.addMedication(m); setAddOpen(false); }} />}
+      {detail && <MedDetailSheetLive med={detail} onClose={() => setDetail(null)} />}
     </div>
   );
 }
 
-// Detail Sheet
+function EmptyState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 40px", gap: 16 }}>
+      <div style={{ width: 120, height: 120, background: "#D6EFE6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+          <rect x="20" y="8" width="20" height="44" rx="10" fill="#1E7D5C" opacity="0.3" />
+          <rect x="8" y="20" width="44" height="20" rx="10" fill="#1E7D5C" opacity="0.3" />
+          <circle cx="44" cy="16" r="6" fill="#43A047" />
+          <path d="M41 16L43.5 18.5L47 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#1A2E3B", marginBottom: 10 }}>Aucun traitement enregistré</div>
+        <div style={{ fontSize: 14, color: "#607D8B", lineHeight: 1.6 }}>
+          Ajoutez vos médicaments pour recevoir des rappels personnalisés et ne plus oublier une prise.
+        </div>
+      </div>
+      <button onClick={onAdd} style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
+        <Plus size={20} color="#FFFFFF" />
+        Ajouter un médicament
+      </button>
+    </div>
+  );
+}
+
+const COLORS = ["#1E7D5C", "#2196F3", "#FF9800", "#43A047", "#E53935"];
+
+function AddMedicationSheet({ onClose, onSave }: { onClose: () => void; onSave: (m: Omit<Medication, "id">) => void }) {
+  const [name, setName] = useState("");
+  const [dose, setDose] = useState("1 comprimé");
+  const [category, setCategory] = useState("");
+  const [time, setTime] = useState("08:00");
+  const [color, setColor] = useState(COLORS[0]);
+
+  const canSave = name.trim().length > 0;
+
+  function submit() {
+    if (!canSave) return;
+    onSave({ name: name.trim(), dose: dose.trim() || "1 comprimé", category: category.trim() || "Médicament", color, times: [time] });
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", height: 48, background: "#F4F6F7", borderRadius: 8, border: "1.5px solid #B2CEBF",
+    paddingInline: 14, fontSize: 15, color: "#1A2E3B", outline: "none", boxSizing: "border-box",
+  };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: "#607D8B", fontWeight: 600, marginBottom: 6 };
+
+  return (
+    <Overlay onClose={onClose}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#1A2E3B" }}>Ajouter un médicament</div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} color="#607D8B" /></button>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <div style={labelStyle}>Nom du médicament</div>
+          <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Ex. Amlodipine 5mg" autoFocus />
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <div style={labelStyle}>Dose</div>
+            <input style={inputStyle} value={dose} onChange={e => setDose(e.target.value)} placeholder="1 comprimé" />
+          </div>
+          <div style={{ width: 120 }}>
+            <div style={labelStyle}>Horaire</div>
+            <input style={inputStyle} type="time" value={time} onChange={e => setTime(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <div style={labelStyle}>Catégorie</div>
+          <input style={inputStyle} value={category} onChange={e => setCategory(e.target.value)} placeholder="Ex. Antihypertenseur" />
+        </div>
+        <div>
+          <div style={labelStyle}>Couleur</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {COLORS.map(c => (
+              <button key={c} onClick={() => setColor(c)} style={{
+                width: 32, height: 32, borderRadius: "50%", background: c, cursor: "pointer",
+                border: color === c ? "3px solid #1A2E3B" : "3px solid transparent",
+              }} />
+            ))}
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={submit}
+        disabled={!canSave}
+        style={{ width: "100%", height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 16, fontWeight: 600, marginTop: 24, cursor: canSave ? "pointer" : "not-allowed", opacity: canSave ? 1 : 0.4 }}
+      >
+        Enregistrer
+      </button>
+    </Overlay>
+  );
+}
+
+function MedDetailSheetLive({ med, onClose }: { med: Medication; onClose: () => void }) {
+  const store = useStore();
+  const firstTime = med.times[0];
+  const taken = store.isTaken(med.id, firstTime);
+  return (
+    <Overlay onClose={onClose}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#1A2E3B" }}>{med.name}</div>
+          <div style={{ display: "inline-block", padding: "4px 12px", background: "#D6EFE6", borderRadius: 20, marginTop: 6 }}>
+            <span style={{ fontSize: 12, color: "#1E7D5C", fontWeight: 600 }}>{med.category}</span>
+          </div>
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><X size={20} color="#607D8B" /></button>
+      </div>
+      <div style={{ marginTop: 20 }}>
+        {[
+          ["Dosage", med.dose],
+          ["Fréquence", `${med.times.length} fois par jour`],
+          ["Depuis", med.since ?? "—"],
+          ["Prescripteur", med.prescriber ?? "—"],
+        ].map(([label, val]) => (
+          <div key={label} style={{ display: "flex", justifyContent: "space-between", paddingBlock: 12, borderBottom: "1px solid #F4F6F7" }}>
+            <span style={{ fontSize: 14, color: "#607D8B" }}>{label}</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: "#1A2E3B" }}>{val}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>RAPPELS PROGRAMMÉS</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {med.times.map(t => (
+            <div key={t} style={{ padding: "6px 14px", background: "#D6EFE6", borderRadius: 20 }}>
+              <span style={{ fontSize: 13, color: "#1E7D5C", fontWeight: 600 }}>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {med.notice && (
+        <div style={{ marginTop: 16, background: "#F4F6F7", borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, marginBottom: 6 }}>NOTICE</div>
+          <div style={{ fontSize: 13, color: "#607D8B", lineHeight: 1.5 }}>{med.notice}</div>
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+        <button onClick={onClose} style={{ flex: 1, height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
+          Fermer
+        </button>
+        <button
+          onClick={() => { store.toggleIntake(med.id, firstTime); onClose(); }}
+          style={{ flex: 1, height: 52, background: taken ? "#607D8B" : "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer" }}
+        >
+          {taken ? "Annuler la prise" : "Marquer pris"}
+        </button>
+      </div>
+    </Overlay>
+  );
+}
+
+/** Feuille modale glissant depuis le bas. */
+function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", justifyContent: "flex-end", zIndex: 10 }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: "#FFFFFF", borderRadius: "24px 24px 0 0", padding: "0 20px 28px", maxHeight: "85%", overflowY: "auto" }}
+      >
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 16px" }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#D1D5DB" }} />
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Maquette statique conservée pour la galerie (route /gallery).
 export function MedDetailSheet() {
   return (
     <div style={{ width: 390, height: 844, background: "rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
       <div style={{ background: "#FFFFFF", borderRadius: "24px 24px 0 0", padding: "0 0 32px" }}>
-        {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: "#D1D5DB" }} />
         </div>
         <div style={{ padding: "8px 20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#1A2E3B" }}>Amlodipine 5mg</div>
-              <div style={{ display: "inline-block", padding: "4px 12px", background: "#D6EFE6", borderRadius: 20, marginTop: 6 }}>
-                <span style={{ fontSize: 12, color: "#1E7D5C", fontWeight: 600 }}>Antihypertenseur</span>
-              </div>
-            </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#1A2E3B" }}>Amlodipine 5mg</div>
+          <div style={{ display: "inline-block", padding: "4px 12px", background: "#D6EFE6", borderRadius: 20, marginTop: 6 }}>
+            <span style={{ fontSize: 12, color: "#1E7D5C", fontWeight: 600 }}>Antihypertenseur</span>
           </div>
-          {/* Info rows */}
-          <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 0 }}>
+          <div style={{ marginTop: 20 }}>
             {[
               ["Dosage", "5mg par prise"],
               ["Fréquence", "1 fois par jour"],
@@ -123,33 +351,9 @@ export function MedDetailSheet() {
               </div>
             ))}
           </div>
-          {/* Rappels */}
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>RAPPELS PROGRAMMÉS</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {["08:00", "20:00"].map(t => (
-                <div key={t} style={{ padding: "6px 14px", background: "#D6EFE6", borderRadius: 20 }}>
-                  <span style={{ fontSize: 13, color: "#1E7D5C", fontWeight: 600 }}>{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Notice */}
-          <div style={{ marginTop: 16, background: "#F4F6F7", borderRadius: 12, padding: 14 }}>
-            <div style={{ fontSize: 12, color: "#607D8B", fontWeight: 600, marginBottom: 6 }}>NOTICE</div>
-            <div style={{ fontSize: 13, color: "#607D8B", lineHeight: 1.5 }}>
-              L'amlodipine est un antagoniste calcique utilisé pour traiter l'hypertension...
-              <span style={{ color: "#1E7D5C", fontWeight: 600 }}> Lire plus</span>
-            </div>
-          </div>
-          {/* Buttons */}
           <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-            <button style={{ flex: 1, height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 15, fontWeight: 600 }}>
-              Modifier
-            </button>
-            <button style={{ flex: 1, height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600 }}>
-              Marquer pris
-            </button>
+            <button style={{ flex: 1, height: 52, background: "transparent", border: "2px solid #1E7D5C", borderRadius: 12, color: "#1E7D5C", fontSize: 15, fontWeight: 600 }}>Modifier</button>
+            <button style={{ flex: 1, height: 52, background: "#1E7D5C", border: "none", borderRadius: 12, color: "#FFFFFF", fontSize: 15, fontWeight: 600 }}>Marquer pris</button>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router";
+import { AppStoreProvider } from "./store/AppStore";
 import { PhoneFrame } from "./layouts/PhoneFrame";
 import Gallery from "./Gallery";
 import {
@@ -18,6 +19,7 @@ function Phone({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <AppStoreProvider>
     <BrowserRouter>
       <Routes>
         {/* Vue d'ensemble (toutes les maquettes) — utile pour la présentation */}
@@ -40,5 +42,6 @@ export default function App() {
         <Route path="/profile" element={<Phone><ProfileScreen /></Phone>} />
       </Routes>
     </BrowserRouter>
+    </AppStoreProvider>
   );
 }
