@@ -43,6 +43,12 @@ interface StoreApi {
   measurementsOf(type: Measurement["type"]): Measurement[];
   // Profil
   updateProfile(patch: Partial<Profile>): void;
+  // Côté médecin : agit sur un patient précis
+  getUser(id: string): AppState | undefined;
+  addMedicationFor(userId: string, input: Omit<Medication, "id">): void;
+  removeMedicationFor(userId: string, id: string): void;
+  measurementsForUser(userId: string, type: Measurement["type"]): Measurement[];
+  takenCountFor(userId: string): { done: number; total: number };
   // Divers
   resetAll(): void;
 }
@@ -72,6 +78,15 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       const cur = r.users[r.currentUserId];
       if (!cur) return r;
       return { ...r, users: { ...r.users, [r.currentUserId]: fn(cur) } };
+    });
+  }
+
+  // Applique une transformation aux données d'un patient précis (côté médecin).
+  function updateUser(userId: string, fn: (s: AppState) => AppState) {
+    setRoot(r => {
+      const u = r.users[userId];
+      if (!u) return r;
+      return { ...r, users: { ...r.users, [userId]: fn(u) } };
     });
   }
 
@@ -149,6 +164,33 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
     updateProfile(patch) {
       updateCurrent(s => ({ ...s, profile: { ...s.profile, ...patch } }));
+    },
+
+    getUser(id) {
+      return root.users[id];
+    },
+
+    addMedicationFor(userId, input) {
+      const med: Medication = { ...input, id: `med-${Date.now()}` };
+      updateUser(userId, s => ({ ...s, medications: [...s.medications, med] }));
+    },
+
+    removeMedicationFor(userId, id) {
+      updateUser(userId, s => ({ ...s, medications: s.medications.filter(m => m.id !== id) }));
+    },
+
+    measurementsForUser(userId, type) {
+      const u = root.users[userId];
+      if (!u) return [];
+      return u.measurements.filter(m => m.type === type).sort((a, b) => a.at - b.at);
+    },
+
+    takenCountFor(userId) {
+      const u = root.users[userId];
+      if (!u) return { done: 0, total: 0 };
+      const today = u.intakeLog[dateKey()] ?? [];
+      const total = u.medications.reduce((n, m) => n + m.times.length, 0);
+      return { done: today.length, total };
     },
 
     resetAll() {

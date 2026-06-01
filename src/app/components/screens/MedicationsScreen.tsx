@@ -212,7 +212,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 
 const COLORS = ["#1E7D5C", "#2196F3", "#FF9800", "#43A047", "#E53935"];
 
-function MedicationSheet({ initial, onClose, onSave }: { initial?: Medication; onClose: () => void; onSave: (m: Omit<Medication, "id">) => void }) {
+export function MedicationSheet({ initial, onClose, onSave }: { initial?: Medication; onClose: () => void; onSave: (m: Omit<Medication, "id">) => void }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [dose, setDose] = useState(initial?.dose ?? "1 comprimé");
   const [category, setCategory] = useState(initial?.category ?? "");

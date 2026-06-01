@@ -17,7 +17,8 @@ import {
   InfoPersoScreen, PathologiesScreen, DoctorScreen, LanguageScreen,
   NotificationsScreen, HelpScreen, AboutScreen
 } from "./components/screens/ProfileSubpages";
-import { MedecinDashboard, NotificationScreen } from "./components/screens/SpecialStates";
+import { NotificationScreen } from "./components/screens/SpecialStates";
+import { MedecinDashboard, MedecinPatient } from "./components/screens/MedecinScreens";
 
 /** Enveloppe un écran applicatif dans le cadre téléphone. */
 function Phone({ children }: { children: React.ReactNode }) {
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/profile/help" element={<Phone><HelpScreen /></Phone>} />
         <Route path="/profile/about" element={<Phone><AboutScreen /></Phone>} />
         <Route path="/medecin" element={<Phone><MedecinDashboard /></Phone>} />
+        <Route path="/medecin/patient/:id" element={<Phone><MedecinPatient /></Phone>} />
         <Route path="/notification" element={<Phone><NotificationScreen /></Phone>} />
       </Routes>
     </BrowserRouter>
